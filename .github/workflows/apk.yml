@@ -35,7 +35,7 @@ jobs:
           echo "START $(pwd)" > "$GITHUB_WORKSPACE/gradle.log"
           cd android
           chmod +x gradlew
-          ./gradlew assembleDebug --console=plain 2>&1 | tee -a "$GITHUB_WORKSPACE/gradle.log" -ParhivaVersionCode=${{ github.run_number }} -ParhivaVersionName=0.1.${{ github.run_number }}
+          ./gradlew assembleDebug --console=plain -ParhivaVersionCode=${{ github.run_number }} -ParhivaVersionName=0.1.${{ github.run_number }} 2>&1 | tee -a "$GITHUB_WORKSPACE/gradle.log"
           cp app/build/outputs/apk/debug/app-debug.apk ../Arhiva-probna.apk
       - name: Greska u granu dnevnik (za citanje)
         if: failure()
