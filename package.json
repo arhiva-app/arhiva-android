@@ -4,6 +4,7 @@
   "version": "0.1.0",
   "dependencies": {
     "@capacitor/android": "8.5.2",
+    "@capacitor/app": "8.1.2",
     "@capacitor/core": "8.5.2",
     "@capacitor/filesystem": "8.1.4",
     "@capacitor/share": "8.0.3"
