@@ -9,6 +9,7 @@ public class MainActivity extends BridgeActivity {
     public void onCreate(Bundle savedInstanceState) {
         registerPlugin(SacuvajKaoPlugin.class);   // pre super.onCreate (zvanična dokumentacija Capacitor-a)
         registerPlugin(TrakePlugin.class);
+        registerPlugin(ZakljucavanjePlugin.class);
         super.onCreate(savedInstanceState);
         // SystemBars postavi svoju boju preko glavne niti; naša ide posle nje (ista nit, redom)
         getWindow().getDecorView().post(() -> TrakePlugin.primeni(this));
