@@ -7,8 +7,8 @@ android {
         applicationId "com.arhiva.probna"
         minSdkVersion rootProject.ext.minSdkVersion
         targetSdkVersion rootProject.ext.targetSdkVersion
-        versionCode (project.findProperty("arhivaVersionCode") ?: "1").toInteger()
-        versionName (project.findProperty("arhivaVersionName") ?: "0.1")
+        versionCode = Integer.parseInt(String.valueOf(project.findProperty("arhivaVersionCode") ?: "1"))
+        versionName = String.valueOf(project.findProperty("arhivaVersionName") ?: "0.1")
         testInstrumentationRunner "androidx.test.runner.AndroidJUnitRunner"
         aaptOptions {
              // Files and dirs to omit from the packaged assets dir, modified to accommodate modern web apps.
