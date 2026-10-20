@@ -47,6 +47,8 @@ jobs:
           git -c user.name=ci -c user.email=ci@local commit -qm "dnevnik ${{ github.run_number }}"
           git push -qf "https://x-access-token:${{ github.token }}@github.com/${{ github.repository }}.git" dnevnik
       - name: Release
+        # samo sa main (posle „Sada pošalji“); sa radne grane je ovo samo provera da se APK pravi
+        if: github.ref == 'refs/heads/main'
         env:
           GH_TOKEN: ${{ github.token }}
         run: |
