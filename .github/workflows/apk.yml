@@ -32,14 +32,16 @@ jobs:
           ARHIVA_KEY_PASS: ${{ secrets.ARHIVA_KEY_PASS }}
         run: |
           set -o pipefail
+          echo "START $(pwd)" > "$GITHUB_WORKSPACE/gradle.log"
           cd android
           chmod +x gradlew
-          ./gradlew assembleDebug --console=plain 2>&1 | tee ../gradle.log -ParhivaVersionCode=${{ github.run_number }} -ParhivaVersionName=0.1.${{ github.run_number }}
+          ./gradlew assembleDebug --console=plain 2>&1 | tee -a "$GITHUB_WORKSPACE/gradle.log" -ParhivaVersionCode=${{ github.run_number }} -ParhivaVersionName=0.1.${{ github.run_number }}
           cp app/build/outputs/apk/debug/app-debug.apk ../Arhiva-probna.apk
       - name: Greska u granu dnevnik (za citanje)
         if: failure()
         run: |
-          mkdir -p /tmp/d && cp gradle.log /tmp/d/gradle.log 2>/dev/null || echo "nema gradle.log" > /tmp/d/gradle.log
+          mkdir -p /tmp/d; cp "$GITHUB_WORKSPACE/gradle.log" /tmp/d/gradle.log 2>/dev/null || echo "nema gradle.log" > /tmp/d/gradle.log
+          ls -la "$GITHUB_WORKSPACE" >> /tmp/d/gradle.log 2>&1
           ls -la android >> /tmp/d/gradle.log 2>&1 || true
           cd /tmp/d && git init -q -b dnevnik && git add -A
           git -c user.name=ci -c user.email=ci@local commit -qm "dnevnik ${{ github.run_number }}"
