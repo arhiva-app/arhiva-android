@@ -1,0 +1,61 @@
+START /home/runner/work/arhiva-android/arhiva-android
+Downloading https://services.gradle.org/distributions/gradle-8.14.3-all.zip
+.....................10%.....................20%......................30%.....................40%......................50%.....................60%.....................70%......................80%.....................90%......................100%
+
+Welcome to Gradle 8.14.3!
+
+Here are the highlights of this release:
+ - Java 24 support
+ - GraalVM Native Image toolchain selection
+ - Enhancements to test reporting
+ - Build Authoring improvements
+
+For more details see https://docs.gradle.org/8.14.3/release-notes.html
+
+Starting a Gradle Daemon (subsequent builds will be faster)
+
+FAILURE: Build failed with an exception.
+
+* Where:
+Build file '/home/runner/work/arhiva-android/arhiva-android/android/app/build.gradle' line: 10
+
+* What went wrong:
+A problem occurred evaluating project ':app'.
+> Value is null
+
+* Try:
+> Run with --stacktrace option to get the stack trace.
+> Run with --info or --debug option to get more log output.
+> Run with --scan to get full insights.
+> Get more help at https://help.gradle.org.
+
+BUILD FAILED in 35s
+total 92
+drwxr-xr-x  7 runner runner  4096 Oct 20 15:34 .
+drwxr-xr-x  3 runner runner  4096 Oct 20 15:34 ..
+drwxr-xr-x  7 runner runner  4096 Oct 20 15:34 .git
+drwxr-xr-x  3 runner runner  4096 Oct 20 15:34 .github
+-rw-r--r--  1 runner runner   120 Oct 20 15:34 .gitignore
+-rw-r--r--  1 runner runner   504 Oct 20 15:34 README.md
+drwxr-xr-x  6 runner runner  4096 Oct 20 15:34 android
+-rw-r--r--  1 runner runner   177 Oct 20 15:34 capacitor.config.json
+-rw-r--r--  1 runner runner  1164 Oct 20 15:34 gradle.log
+drwxr-xr-x 86 runner runner  4096 Oct 20 15:34 node_modules
+-rw-r--r--  1 runner runner 44100 Oct 20 15:34 package-lock.json
+-rw-r--r--  1 runner runner   292 Oct 20 15:34 package.json
+drwxr-xr-x  2 runner runner  4096 Oct 20 15:34 www
+total 64
+drwxr-xr-x 6 runner runner 4096 Oct 20 15:34 .
+drwxr-xr-x 7 runner runner 4096 Oct 20 15:34 ..
+-rw-r--r-- 1 runner runner 1824 Oct 20 15:34 .gitignore
+drwxr-xr-x 5 runner runner 4096 Oct 20 15:34 .gradle
+drwxr-xr-x 3 runner runner 4096 Oct 20 15:34 app
+-rw-r--r-- 1 runner runner  637 Oct 20 15:34 build.gradle
+drwxr-xr-x 3 runner runner 4096 Oct 20 15:34 capacitor-cordova-android-plugins
+-rw-r--r-- 1 runner runner  466 Oct 20 15:34 capacitor.settings.gradle
+drwxr-xr-x 3 runner runner 4096 Oct 20 15:34 gradle
+-rw-r--r-- 1 runner runner  987 Oct 20 15:34 gradle.properties
+-rwxr-xr-x 1 runner runner 8733 Oct 20 15:34 gradlew
+-rw-r--r-- 1 runner runner 2937 Oct 20 15:34 gradlew.bat
+-rw-r--r-- 1 runner runner  208 Oct 20 15:34 settings.gradle
+-rw-r--r-- 1 runner runner  498 Oct 20 15:34 variables.gradle
