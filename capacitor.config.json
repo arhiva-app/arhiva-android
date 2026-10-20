@@ -1,5 +1,9 @@
 {
   "appId": "com.arhiva.probna",
   "appName": "Arhiva probna",
-  "webDir": "www"
+  "webDir": "www",
+  "server": {
+    "url": "https://arhiva-app.github.io/arhiva/",
+    "cleartext": false
+  }
 }

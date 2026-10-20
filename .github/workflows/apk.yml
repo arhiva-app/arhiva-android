@@ -1,5 +1,6 @@
-# Pravi probnu Android Arhivu (APK) od objavljene web Arhive (arhiva-app/arhiva, grana main)
-# i stavlja je na stranicu Releases. Stalni link: releases/latest/download/Arhiva-probna.apk
+# Pravi probnu Android Arhivu (APK). Probna učitava Arhivu sa https://arhiva-app.github.io/arhiva/,
+# pa izmene u Arhivi stižu bez nove instalacije; nov APK treba samo kad se menja Android deo.
+# Stalni link: releases/latest/download/Arhiva-probna.apk
 name: APK
 on:
   workflow_dispatch:
@@ -21,16 +22,6 @@ jobs:
           java-version: 21
       - name: Paketi
         run: npm ci
-      - name: Web Arhiva u www
-        run: |
-          git clone --depth 1 https://github.com/arhiva-app/arhiva.git web
-          WEB=$(git -C web rev-parse --short HEAD)
-          echo "WEB=$WEB" >> $GITHUB_ENV
-          rm -rf www && mkdir www
-          cp -r web/. www/ && rm -rf www/.git www/sw.js
-          cp node_modules/@capacitor/core/dist/capacitor.js www/
-          cp native/arhiva-native.js www/
-          python3 native/ubaci.py www/index.html
       - name: Capacitor sync
         run: npx cap sync android
       - name: Kljuc za potpis
@@ -50,4 +41,4 @@ jobs:
         run: |
           gh release create "probna-${{ github.run_number }}" Arhiva-probna.apk \
             --title "Arhiva probna 0.1.${{ github.run_number }}" \
-            --notes "Web Arhiva: ${WEB}" --latest
+            --notes "Android deo $(git rev-parse --short HEAD). Arhiva se učitava sa arhiva-app.github.io/arhiva/." --latest
