@@ -5,7 +5,7 @@ name: APK
 on:
   workflow_dispatch:
   push:
-    branches: [main]
+    branches: [main, radna]   # radna = samo provera (bez release-a), sama se pokrene
 permissions:
   contents: write
 jobs:
