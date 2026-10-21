@@ -40,4 +40,6 @@
     <uses-permission android:name="android.permission.INTERNET" />
     <!-- Slikaj (kamera iz Arhive) -->
     <uses-permission android:name="android.permission.CAMERA" />
+    <!-- v194: vibracija (navigator.vibrate u WebView-u traži ovu dozvolu; obična dozvola, bez pitanja) -->
+    <uses-permission android:name="android.permission.VIBRATE" />
 </manifest>
