@@ -5,5 +5,11 @@
   "server": {
     "url": "https://arhiva-app.github.io/arhiva/",
     "cleartext": false
+  },
+  "plugins": {
+    "LocalNotifications": {
+      "smallIcon": "ic_stat_arhiva",
+      "iconColor": "#B8955A"
+    }
   }
 }
