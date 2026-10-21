@@ -23,11 +23,12 @@ import org.json.JSONObject;
    1) napravi: prava prečica na početnom ekranu (requestPinShortcut) — naziv i sličica stavke; dodir otvara Arhivu
       sa dodatkom EXTRA = id stavke. Arhiva je otvara tek posle otključavanja (logika je u Arhivi, blok PREČICA).
    2) poslednji: dinamičke prečice (dugi pritisak na ikonicu Arhive) — poslednje otvorene stavke; prazan spisak ih briše.
-   3) cekaj: id iz prečice kojom je Arhiva otvorena (jednom; posle se briše). Dok Arhiva radi, nova prečica javlja „stavka“. */
+   3) cekaj: id i vrsta prečice kojom je Arhiva otvorena (jednom; posle se briše). Dok Arhiva radi, nova prečica javlja „stavka“.
+      Prečica sa početnog ekrana (vrsta „precica“) otvara stavku i kad je Arhiva zaključana (samo ta stavka; logika u Arhivi). */
 @CapacitorPlugin(name = "Precica")
 public class PrecicaPlugin extends Plugin {
-    static final String EXTRA = "arhiva_stavka";
-    private String naCekanju;
+    static final String EXTRA = "arhiva_stavka", VRSTA = "arhiva_vrsta";   // vrsta: "precica" (početni ekran) | "poslednji" (ikonica)
+    private String naCekanju, vrstaCekanja;
 
     @Override
     public void load() {
@@ -44,16 +45,20 @@ public class PrecicaPlugin extends Plugin {
         if (i == null) return false;
         String id = i.getStringExtra(EXTRA);
         if (id == null || id.isEmpty()) return false;
+        String v = i.getStringExtra(VRSTA);
         i.removeExtra(EXTRA);   // da se ista stavka ne otvori ponovo (npr. kad se aktivnost ponovo napravi)
+        i.removeExtra(VRSTA);
         naCekanju = id;
+        vrstaCekanja = v == null ? "precica" : v;
         return true;
     }
 
     @PluginMethod
     public void cekaj(PluginCall call) {
         JSObject r = new JSObject();
-        if (naCekanju != null) r.put("id", naCekanju);
+        if (naCekanju != null) { r.put("id", naCekanju); r.put("vrsta", vrstaCekanja); }
         naCekanju = null;
+        vrstaCekanja = null;
         call.resolve(r);
     }
 
@@ -74,7 +79,7 @@ public class PrecicaPlugin extends Plugin {
         if (!ShortcutManagerCompat.isRequestPinShortcutSupported(c)) { r.put("podrzano", false); call.resolve(r); return; }
         try {
             boolean ok = ShortcutManagerCompat.requestPinShortcut(c,
-                gradi(c, "s:" + id, id, call.getString("naziv", ""), call.getString("slika"), 0), null);
+                gradi(c, "s:" + id, id, "precica", call.getString("naziv", ""), call.getString("slika"), 0), null);
             r.put("podrzano", true);
             r.put("ok", ok);
             call.resolve(r);
@@ -94,7 +99,7 @@ public class PrecicaPlugin extends Plugin {
                 JSONObject o = lista.getJSONObject(k);
                 String id = o.optString("id", "");
                 if (id.isEmpty()) continue;
-                sve.add(gradi(c, "p:" + id, id, o.optString("naziv", ""), o.optString("slika", null), k));
+                sve.add(gradi(c, "p:" + id, id, "poslednji", o.optString("naziv", ""), o.optString("slika", null), k));
             }
             if (sve.isEmpty()) ShortcutManagerCompat.removeAllDynamicShortcuts(c);
             else ShortcutManagerCompat.setDynamicShortcuts(c, sve);
@@ -104,8 +109,8 @@ public class PrecicaPlugin extends Plugin {
         }
     }
 
-    private static ShortcutInfoCompat gradi(Context c, String kljuc, String id, String naziv, String slika, int rang) {
-        Intent i = new Intent(c, MainActivity.class).setAction(Intent.ACTION_VIEW).putExtra(EXTRA, id);
+    private static ShortcutInfoCompat gradi(Context c, String kljuc, String id, String vrsta, String naziv, String slika, int rang) {
+        Intent i = new Intent(c, MainActivity.class).setAction(Intent.ACTION_VIEW).putExtra(EXTRA, id).putExtra(VRSTA, vrsta);
         IconCompat ik = null;
         if (slika != null && !slika.isEmpty()) {
             try {
