@@ -25,6 +25,7 @@ public class MainActivity extends BridgeActivity {
         registerPlugin(SacuvajKaoPlugin.class);   // pre super.onCreate (zvanična dokumentacija Capacitor-a)
         registerPlugin(TrakePlugin.class);
         registerPlugin(ZakljucavanjePlugin.class);
+        registerPlugin(PrecicaPlugin.class);
         super.onCreate(savedInstanceState);
         // Galerija: Androidov birač fotografija umesto opšteg birača fajlova (brže, kao u Chrome-u)
         getBridge().getWebView().setWebChromeClient(new BiracSlika(getBridge(), this));
