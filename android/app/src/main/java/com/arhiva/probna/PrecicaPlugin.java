@@ -2,6 +2,10 @@ package com.arhiva.probna;
 
 import android.content.Context;
 import android.content.Intent;
+import android.content.pm.ShortcutInfo;
+import android.content.pm.ShortcutManager;
+import android.net.Uri;
+import android.provider.Settings;
 import android.graphics.Bitmap;
 import android.graphics.BitmapFactory;
 import android.os.Build;
@@ -68,6 +72,36 @@ public class PrecicaPlugin extends Plugin {
         r.put("podrzano", ShortcutManagerCompat.isRequestPinShortcutSupported(getContext()));
         r.put("proizvodjac", Build.MANUFACTURER);
         call.resolve(r);
+    }
+
+    /* v197: da li je prečica zaista na početnom ekranu (zvanično: ShortcutManager.getPinnedShortcuts, Android 8+).
+       Xiaomi bez dozvole tiho odbije prečicu, a requestPinShortcut ipak vrati true — zato Arhiva proverava. */
+    @PluginMethod
+    public void prikvacena(PluginCall call) {
+        JSObject r = new JSObject();
+        String id = call.getString("id", "");
+        if (Build.VERSION.SDK_INT < 26) { r.put("proveriva", false); call.resolve(r); return; }
+        boolean ima = false;
+        try {
+            ShortcutManager sm = getContext().getSystemService(ShortcutManager.class);
+            if (sm != null) for (ShortcutInfo s : sm.getPinnedShortcuts()) if (("s:" + id).equals(s.getId())) { ima = true; break; }
+        } catch (Exception e) { r.put("proveriva", false); call.resolve(r); return; }
+        r.put("proveriva", true);
+        r.put("ima", ima);
+        call.resolve(r);
+    }
+
+    /* v197: stranica Arhive u podešavanjima telefona (zvanično: Settings.ACTION_APPLICATION_DETAILS_SETTINGS) */
+    @PluginMethod
+    public void dozvole(PluginCall call) {
+        try {
+            Intent i = new Intent(Settings.ACTION_APPLICATION_DETAILS_SETTINGS, Uri.fromParts("package", getContext().getPackageName(), null));
+            i.addFlags(Intent.FLAG_ACTIVITY_NEW_TASK);
+            getActivity().startActivity(i);
+            call.resolve();
+        } catch (Exception e) {
+            call.reject("DOZVOLE: " + e.getMessage());
+        }
     }
 
     @PluginMethod
