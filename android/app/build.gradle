@@ -47,6 +47,7 @@ dependencies {
     implementation "androidx.coordinatorlayout:coordinatorlayout:$androidxCoordinatorLayoutVersion"
     implementation "androidx.core:core-splashscreen:$coreSplashScreenVersion"
     implementation "androidx.biometric:biometric:1.1.0"   // zaključavanje Arhive (otisak, lice, PIN telefona)
+    implementation "com.google.android.gms:play-services-auth:21.5.1"   // v203 dozvola za Google Drive (AuthorizationClient)
     implementation project(':capacitor-android')
     testImplementation "junit:junit:$junitVersion"
     androidTestImplementation "androidx.test.ext:junit:$androidxJunitVersion"

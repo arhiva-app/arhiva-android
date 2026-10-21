@@ -5,9 +5,11 @@ import android.net.Uri;
 import android.os.Bundle;
 import android.webkit.ValueCallback;
 import androidx.activity.result.ActivityResultLauncher;
+import androidx.activity.result.IntentSenderRequest;
 import androidx.activity.result.PickVisualMediaRequest;
 import androidx.activity.result.contract.ActivityResultContracts;
 import com.getcapacitor.BridgeActivity;
+import com.getcapacitor.PluginHandle;
 import java.util.List;
 
 public class MainActivity extends BridgeActivity {
@@ -19,6 +21,12 @@ public class MainActivity extends BridgeActivity {
     private final ActivityResultLauncher<PickVisualMediaRequest> biracJedan =
         registerForActivityResult(new ActivityResultContracts.PickVisualMedia(), (Uri uri) ->
             vratiSlike(uri == null ? null : new Uri[] { uri }));
+    // v203 Google-ov prozor za dozvolu Drive-a (izbor naloga, „Dozvoli“); ishod ide dodatku GoogleDrive
+    private final ActivityResultLauncher<IntentSenderRequest> googleProzor =
+        registerForActivityResult(new ActivityResultContracts.StartIntentSenderForResult(), res -> {
+            GoogleDrivePlugin p = googleDodatak();
+            if (p != null) p.rezultat(res.getResultCode(), res.getData());
+        });
 
     @Override
     public void onCreate(Bundle savedInstanceState) {
@@ -26,6 +34,7 @@ public class MainActivity extends BridgeActivity {
         registerPlugin(TrakePlugin.class);
         registerPlugin(ZakljucavanjePlugin.class);
         registerPlugin(PrecicaPlugin.class);
+        registerPlugin(GoogleDrivePlugin.class);
         super.onCreate(savedInstanceState);
         // Galerija: Androidov birač fotografija umesto opšteg birača fajlova (brže, kao u Chrome-u)
         getBridge().getWebView().setWebChromeClient(new BiracSlika(getBridge(), this));
@@ -44,6 +53,20 @@ public class MainActivity extends BridgeActivity {
         } catch (Exception e) {
             vratiSlike(null);
         }
+    }
+
+    void googleDozvola(IntentSenderRequest zahtev) {
+        try {
+            googleProzor.launch(zahtev);
+        } catch (Exception e) {
+            GoogleDrivePlugin p = googleDodatak();
+            if (p != null) p.rezultat(RESULT_CANCELED, null);
+        }
+    }
+
+    private GoogleDrivePlugin googleDodatak() {
+        PluginHandle h = getBridge() == null ? null : getBridge().getPlugin("GoogleDrive");
+        return h == null ? null : (GoogleDrivePlugin) h.getInstance();
     }
 
     private void vratiSlike(Uri[] uris) {
