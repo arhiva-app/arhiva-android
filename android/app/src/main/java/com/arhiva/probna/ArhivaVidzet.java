@@ -85,8 +85,12 @@ public class ArhivaVidzet extends AppWidgetProvider {
     }
 
     private static PendingIntent otvori(Context c, String id, int kod) {
+        return otvori(c, id, "vidzet", kod);
+    }
+
+    private static PendingIntent otvori(Context c, String id, String vrsta, int kod) {
         Intent i = new Intent(c, MainActivity.class).setAction(Intent.ACTION_VIEW)
-            .putExtra(PrecicaPlugin.EXTRA, id).putExtra(PrecicaPlugin.VRSTA, "vidzet")
+            .putExtra(PrecicaPlugin.EXTRA, id).putExtra(PrecicaPlugin.VRSTA, vrsta)
             .addFlags(Intent.FLAG_ACTIVITY_NEW_TASK);
         // različit kod = posebna namera po redu/dokumentu (namere se inače razlikuju samo po dodacima)
         return PendingIntent.getActivity(c, kod, i, PendingIntent.FLAG_UPDATE_CURRENT | PendingIntent.FLAG_IMMUTABLE);
@@ -141,10 +145,10 @@ public class ArhivaVidzet extends AppWidgetProvider {
         return n < 0 ? CRVENA : n <= upoz ? ZUTA : SIVA;
     }
 
-    /* v216: dodir na vidžet (ne na red ili dokument) → prozor preko celog ekrana, samo za gledanje */
+    /* v221 (Zoran): dodir na vidžet (ne na red ili dokument) → prozor vidžeta, sada ekran UNUTAR Arhive (vrsta „vidzet-prozor“):
+       jedna aplikacija, jedan zadatak — bez bljeska, bez dve Arhive u skorašnjim, nazad uvek jedan korak. */
     private static PendingIntent prozor(Context c) {
-        Intent i = new Intent(c, VidzetEkran.class).addFlags(Intent.FLAG_ACTIVITY_NEW_TASK | Intent.FLAG_ACTIVITY_CLEAR_TASK);
-        return PendingIntent.getActivity(c, 2, i, PendingIntent.FLAG_UPDATE_CURRENT | PendingIntent.FLAG_IMMUTABLE);
+        return otvori(c, "-", "vidzet-prozor", 2);
     }
 
     static JSONArray rokovi(JSONObject d) {

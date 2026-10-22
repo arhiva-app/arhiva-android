@@ -4,7 +4,6 @@ import android.appwidget.AppWidgetManager;
 import android.content.ComponentName;
 import android.app.Activity;
 import android.content.Context;
-import android.content.Intent;
 import android.os.Build;
 import android.util.Base64;
 import com.getcapacitor.JSObject;
@@ -21,8 +20,7 @@ import org.json.JSONObject;
    postavi({podaci}): sličice → fajlovi (filesDir/vidzet/dK.png), ostalo → SharedPreferences, pa osvežavanje vidžeta.
    stanje(): koliko vidžeta je na početnom ekranu i da li telefon ume da ga postavi na zahtev.
    naEkran(): zvanično AppWidgetManager.requestPinAppWidget (Android 8+) — telefon pita korisnika gde da ga stavi.
-   prozor(): v218/v219 korak nazad u Arhivi posle dolaska iz prozora vidžeta → ponovo prozor vidžeta (Zoran: nazad = tačno jedan
-   ekran unazad). Arhiva ide iza (moveTaskToBack), pa nazad iz prozora vodi na početni ekran telefona, ne u Arhivu. */
+   skloni(): v221 — Arhiva u pozadinu (prozor vidžeta je sada ekran u Arhivi; poseban Androidov prozor VidzetEkran je ukinut). */
 @CapacitorPlugin(name = "Vidzet")
 public class VidzetPlugin extends Plugin {
 
@@ -81,19 +79,12 @@ public class VidzetPlugin extends Plugin {
         call.resolve(r);
     }
 
+    /* v221: korak nazad sa prozora vidžeta (ili iz dokumenta otvorenog sa vidžeta) → Arhiva ide u pozadinu, ostaje kakva je
+       (zvanično Activity.moveTaskToBack); na početnom ekranu telefona je opet vidžet. */
     @PluginMethod
-    public void prozor(PluginCall call) {
+    public void skloni(PluginCall call) {
         Activity a = getActivity();
-        try {
-            // v219: živ prozor se samo vrati napred (FLAG_ACTIVITY_NEW_TASK: postojeći zadatak sa poslednjim stanjem);
-            // ako ga nema (npr. Android ga je ugasio), napravi se nov. Arhiva zatim ide iza.
-            Intent i = new Intent(getContext(), VidzetEkran.class).addFlags(Intent.FLAG_ACTIVITY_NEW_TASK);
-            if (!VidzetEkran.ziv()) i.addFlags(Intent.FLAG_ACTIVITY_CLEAR_TASK);
-            getContext().startActivity(i);
-            if (a != null) a.runOnUiThread(() -> a.moveTaskToBack(true));
-            call.resolve();
-        } catch (Exception e) {
-            call.reject("VIDZET: " + e.getMessage());
-        }
+        if (a == null) { call.reject("VIDZET: nema aktivnosti"); return; }
+        a.runOnUiThread(() -> { a.moveTaskToBack(true); call.resolve(); });
     }
 }
