@@ -4,4 +4,5 @@
     <string name="title_activity_main">Arhiva probna</string>
     <string name="package_name">com.arhiva.probna</string>
     <string name="custom_url_scheme">com.arhiva.probna</string>
+    <string name="vidzet_opis">Rokovi i izabrani dokumenti Arhive</string>
 </resources>

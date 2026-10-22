@@ -1,0 +1,129 @@
+<?xml version="1.0" encoding="utf-8"?>
+<!-- v214 vidžet srednji: 3 najbliža roka -->
+<LinearLayout xmlns:android="http://schemas.android.com/apk/res/android"
+    android:id="@+id/vz_koren"
+    android:layout_width="match_parent"
+    android:layout_height="match_parent"
+    android:background="@drawable/vz_pozadina"
+    android:orientation="vertical"
+    android:paddingLeft="12dp"
+    android:paddingTop="10dp"
+    android:paddingRight="12dp"
+    android:paddingBottom="10dp">
+    <LinearLayout
+        android:layout_width="match_parent"
+        android:layout_height="wrap_content"
+        android:gravity="center_vertical"
+        android:orientation="horizontal">
+        <ImageView
+            android:layout_width="22dp"
+            android:layout_height="22dp"
+            android:contentDescription=""
+            android:src="@mipmap/ic_launcher" />
+        <TextView
+            android:id="@+id/vz_naslov"
+            android:layout_width="wrap_content"
+            android:layout_height="wrap_content"
+            android:layout_marginLeft="8dp"
+            android:text="Arhiva"
+            android:textColor="#E9E8E4"
+            android:textSize="14sp"
+            android:textStyle="bold" />
+    </LinearLayout>
+    <View android:layout_width="match_parent" android:layout_height="4dp" />
+    <LinearLayout
+        android:layout_width="match_parent"
+        android:layout_height="wrap_content"
+        android:orientation="vertical">
+        <LinearLayout
+            android:id="@+id/vz_r1"
+            android:layout_width="match_parent"
+            android:layout_height="wrap_content"
+            android:gravity="center_vertical"
+            android:orientation="horizontal"
+            android:paddingTop="5dp"
+            android:paddingBottom="5dp"
+            android:visibility="gone">
+            <TextView
+                android:id="@+id/vz_r1_n"
+                android:layout_width="0dp"
+                android:layout_height="wrap_content"
+                android:layout_weight="1"
+                android:ellipsize="end"
+                android:maxLines="1"
+                android:textColor="#E9E8E4"
+                android:textSize="14sp" />
+            <TextView
+                android:id="@+id/vz_r1_k"
+                android:layout_width="wrap_content"
+                android:layout_height="wrap_content"
+                android:layout_marginLeft="8dp"
+                android:maxLines="1"
+                android:textColor="#9A9A9F"
+                android:textSize="13sp" />
+        </LinearLayout>
+        <LinearLayout
+            android:id="@+id/vz_r2"
+            android:layout_width="match_parent"
+            android:layout_height="wrap_content"
+            android:gravity="center_vertical"
+            android:orientation="horizontal"
+            android:paddingTop="5dp"
+            android:paddingBottom="5dp"
+            android:visibility="gone">
+            <TextView
+                android:id="@+id/vz_r2_n"
+                android:layout_width="0dp"
+                android:layout_height="wrap_content"
+                android:layout_weight="1"
+                android:ellipsize="end"
+                android:maxLines="1"
+                android:textColor="#E9E8E4"
+                android:textSize="14sp" />
+            <TextView
+                android:id="@+id/vz_r2_k"
+                android:layout_width="wrap_content"
+                android:layout_height="wrap_content"
+                android:layout_marginLeft="8dp"
+                android:maxLines="1"
+                android:textColor="#9A9A9F"
+                android:textSize="13sp" />
+        </LinearLayout>
+        <LinearLayout
+            android:id="@+id/vz_r3"
+            android:layout_width="match_parent"
+            android:layout_height="wrap_content"
+            android:gravity="center_vertical"
+            android:orientation="horizontal"
+            android:paddingTop="5dp"
+            android:paddingBottom="5dp"
+            android:visibility="gone">
+            <TextView
+                android:id="@+id/vz_r3_n"
+                android:layout_width="0dp"
+                android:layout_height="wrap_content"
+                android:layout_weight="1"
+                android:ellipsize="end"
+                android:maxLines="1"
+                android:textColor="#E9E8E4"
+                android:textSize="14sp" />
+            <TextView
+                android:id="@+id/vz_r3_k"
+                android:layout_width="wrap_content"
+                android:layout_height="wrap_content"
+                android:layout_marginLeft="8dp"
+                android:maxLines="1"
+                android:textColor="#9A9A9F"
+                android:textSize="13sp" />
+        </LinearLayout>
+        <TextView
+            android:id="@+id/vz_prazno"
+            android:layout_width="match_parent"
+            android:layout_height="wrap_content"
+            android:paddingTop="6dp"
+            android:text="Otvori Arhivu"
+            android:textColor="#9A9A9F"
+            android:textSize="13sp"
+            android:visibility="gone" />
+    </LinearLayout>
+</LinearLayout>
