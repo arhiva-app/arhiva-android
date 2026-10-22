@@ -24,6 +24,15 @@
 
         </activity>
 
+        <!-- v216 prozor vidžeta preko celog ekrana (samo gledanje); poseban zadatak, ne ostaje u skorašnjim -->
+        <activity
+            android:name=".VidzetEkran"
+            android:exported="false"
+            android:excludeFromRecents="true"
+            android:noHistory="true"
+            android:taskAffinity="com.arhiva.probna.vidzet"
+            android:theme="@style/VidzetTema" />
+
         <!-- v214 vidžet na početnom ekranu (AppWidgetProvider) -->
         <receiver
             android:name=".ArhivaVidzet"

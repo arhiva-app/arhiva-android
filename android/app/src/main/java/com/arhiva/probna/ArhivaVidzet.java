@@ -62,7 +62,7 @@ public class ArhivaVidzet extends AppWidgetProvider {
         return new File(new File(c.getFilesDir(), "vidzet"), "d" + k + ".png");
     }
 
-    private static JSONObject podaci(Context c) {
+    static JSONObject podaci(Context c) {
         SharedPreferences sp = c.getSharedPreferences(PREFS, Context.MODE_PRIVATE);
         try { return new JSONObject(sp.getString(KLJUC, "{}")); } catch (Exception e) { return new JSONObject(); }
     }
@@ -93,11 +93,11 @@ public class ArhivaVidzet extends AppWidgetProvider {
     }
 
     /* v215: korisnik je izabrao „Nijedan“ — vidžet bez podsetnika (samo dokumenti, bez broja) */
-    private static boolean bezPodsetnika(JSONObject d) {
+    static boolean bezPodsetnika(JSONObject d) {
         return "nijedan".equals(d.optString("mode"));
     }
 
-    private static String txt(JSONObject d, String k, String pod) {
+    static String txt(JSONObject d, String k, String pod) {
         JSONObject l = d.optJSONObject("L");
         String s = l == null ? null : l.optString(k, null);
         return (s == null || s.isEmpty()) ? pod : s;
@@ -115,7 +115,7 @@ public class ArhivaVidzet extends AppWidgetProvider {
         } catch (Exception e) { return Integer.MAX_VALUE; }
     }
 
-    private static String rec(JSONObject d, int n) {
+    static String rec(JSONObject d, int n) {
         n = Math.abs(n);
         if ("en".equals(d.optString("lang"))) return n == 1 ? "day" : "days";
         return (n % 10 == 1 && n % 100 != 11) ? "dan" : "dana";
@@ -129,7 +129,25 @@ public class ArhivaVidzet extends AppWidgetProvider {
         return s + " · " + f;
     }
 
-    private static JSONArray rokovi(JSONObject d) {
+    /* v216: kratko „prošlo / danas / sutra / za N dana“ (prozor VidzetEkran: datum ide u drugi red) */
+    static String kratko(JSONObject d, int n) {
+        if (n < 0) return txt(d, "gone", "prošlo");
+        if (n == 0) return txt(d, "today", "danas");
+        if (n == 1) return txt(d, "tomorrow", "sutra");
+        return txt(d, "inN", "za {n} {d}").replace("{n}", String.valueOf(n)).replace("{d}", rec(d, n));
+    }
+
+    static int boja(int n, int upoz) {
+        return n < 0 ? CRVENA : n <= upoz ? ZUTA : SIVA;
+    }
+
+    /* v216: dodir na vidžet (ne na red ili dokument) → prozor preko celog ekrana, samo za gledanje */
+    private static PendingIntent prozor(Context c) {
+        Intent i = new Intent(c, VidzetEkran.class).addFlags(Intent.FLAG_ACTIVITY_NEW_TASK | Intent.FLAG_ACTIVITY_CLEAR_TASK);
+        return PendingIntent.getActivity(c, 2, i, PendingIntent.FLAG_UPDATE_CURRENT | PendingIntent.FLAG_IMMUTABLE);
+    }
+
+    static JSONArray rokovi(JSONObject d) {
         JSONArray a = d.optJSONArray("rokovi");
         return a == null ? new JSONArray() : a;
     }
@@ -153,14 +171,14 @@ public class ArhivaVidzet extends AppWidgetProvider {
         } else {
             v.setViewVisibility(R.id.vz_broj, View.GONE);
         }
-        v.setOnClickPendingIntent(R.id.vz_koren, otvori(c, "-", 1));
+        v.setOnClickPendingIntent(R.id.vz_koren, prozor(c));
         return v;
     }
 
     private static RemoteViews srednji(Context c, JSONObject d, boolean veliki) {
         RemoteViews v = new RemoteViews(c.getPackageName(), veliki ? R.layout.vidzet_veliki : R.layout.vidzet_srednji);
         v.setTextViewText(R.id.vz_naslov, txt(d, "title", "Arhiva"));
-        v.setOnClickPendingIntent(R.id.vz_koren, otvori(c, "-", 1));
+        v.setOnClickPendingIntent(R.id.vz_koren, prozor(c));
         JSONArray r = rokovi(d);
         int prikazano = 0;
         for (int k = 0; k < r.length() && prikazano < REDOVI.length; k++) {
@@ -173,7 +191,7 @@ public class ArhivaVidzet extends AppWidgetProvider {
             v.setViewVisibility(ids[0], View.VISIBLE);
             v.setTextViewText(ids[1], o.optString("n"));
             v.setTextViewText(ids[2], kada(d, n, o.optString("f"), upoz));
-            v.setTextColor(ids[2], n < 0 ? CRVENA : n <= upoz ? ZUTA : SIVA);
+            v.setTextColor(ids[2], boja(n, upoz));
             v.setOnClickPendingIntent(ids[0], otvori(c, o.optString("id", "-"), 10 + prikazano));
         }
         for (int k = prikazano; k < REDOVI.length; k++) v.setViewVisibility(REDOVI[k][0], View.GONE);
@@ -194,7 +212,13 @@ public class ArhivaVidzet extends AppWidgetProvider {
                 v.setViewVisibility(ids[0], View.VISIBLE);
                 v.setTextViewText(ids[2], o.optString("n"));
                 Bitmap b = null;
-                try { File f = slika(c, k); if (f.exists()) b = BitmapFactory.decodeFile(f.getAbsolutePath()); } catch (Exception e) { b = null; }
+                try {
+                    File f = slika(c, k);
+                    if (f.exists()) {   // v216: sličice su sada 420 px (za prozor); vidžetu je dovoljna polovina (manji paket)
+                        BitmapFactory.Options op = new BitmapFactory.Options(); op.inSampleSize = 2;
+                        b = BitmapFactory.decodeFile(f.getAbsolutePath(), op);
+                    }
+                } catch (Exception e) { b = null; }
                 if (b != null) v.setImageViewBitmap(ids[1], b); else v.setImageViewResource(ids[1], R.mipmap.ic_launcher);
                 v.setOnClickPendingIntent(ids[0], otvori(c, o.optString("id", "-"), 20 + k));
             }
