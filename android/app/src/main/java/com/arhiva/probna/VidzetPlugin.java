@@ -21,7 +21,7 @@ import org.json.JSONObject;
    postavi({podaci}): sličice → fajlovi (filesDir/vidzet/dK.png), ostalo → SharedPreferences, pa osvežavanje vidžeta.
    stanje(): koliko vidžeta je na početnom ekranu i da li telefon ume da ga postavi na zahtev.
    naEkran(): zvanično AppWidgetManager.requestPinAppWidget (Android 8+) — telefon pita korisnika gde da ga stavi.
-   prozor(): v218 korak nazad u Arhivi posle dolaska iz prozora vidžeta → ponovo prozor vidžeta (Zoran: nazad = tačno jedan
+   prozor(): v218/v219 korak nazad u Arhivi posle dolaska iz prozora vidžeta → ponovo prozor vidžeta (Zoran: nazad = tačno jedan
    ekran unazad). Arhiva ide iza (moveTaskToBack), pa nazad iz prozora vodi na početni ekran telefona, ne u Arhivu. */
 @CapacitorPlugin(name = "Vidzet")
 public class VidzetPlugin extends Plugin {
@@ -85,7 +85,10 @@ public class VidzetPlugin extends Plugin {
     public void prozor(PluginCall call) {
         Activity a = getActivity();
         try {
-            Intent i = new Intent(getContext(), VidzetEkran.class).addFlags(Intent.FLAG_ACTIVITY_NEW_TASK | Intent.FLAG_ACTIVITY_CLEAR_TASK);
+            // v219: živ prozor se samo vrati napred (FLAG_ACTIVITY_NEW_TASK: postojeći zadatak sa poslednjim stanjem);
+            // ako ga nema (npr. Android ga je ugasio), napravi se nov. Arhiva zatim ide iza.
+            Intent i = new Intent(getContext(), VidzetEkran.class).addFlags(Intent.FLAG_ACTIVITY_NEW_TASK);
+            if (!VidzetEkran.ziv()) i.addFlags(Intent.FLAG_ACTIVITY_CLEAR_TASK);
             getContext().startActivity(i);
             if (a != null) a.runOnUiThread(() -> a.moveTaskToBack(true));
             call.resolve();

@@ -28,12 +28,19 @@ import org.json.JSONObject;
    izabrani podsetnici (kako je izabrano u Arhivi: Svi · Izabrani · Nijedan) i izabrani dokumenti. Podaci su isti kao za vidžet
    (SharedPreferences + sličice), pa se ništa ne učitava iz Arhive. Bez PIN-a (zaključan telefon je zaštita).
    Dodir na podsetnik/dokument → Arhiva otvara taj dokument samo za gledanje (Precica, vrsta „vidzet“).
-   „Uredi ›“ → Arhiva (PIN ako je zaključana) na ekranu „Vidžet“, gde se sve menja (vrsta „vidzet-uredi“). */
+   „Uredi ›“ → Arhiva (PIN ako je zaključana) na ekranu „Vidžet“, gde se sve menja (vrsta „vidzet-uredi“).
+   v219: prozor ostaje živ dok je korisnik u Arhivi (ne gasi se pri otvaranju dokumenta / Uredi); nazad u Arhivi je samo
+   skloni (Vidzet.prozor), pa se odmah vidi ovaj isti prozor, osvežen (onResume). Nazad iz prozora → početni ekran. */
 public class VidzetEkran extends Activity {
     private static final int POZADINA = 0xFF000000, KARTICA = 0xFF1E2024, LINIJA = 0xFF34363C,
         TEKST = 0xFFE9E8E4, SIVO = 0xFF9A9A9F, ZLATNA = 0xFFD9BE85;
     private float gustina;
     private LinearLayout kolona;
+    private ScrollView sv;
+    private boolean prvi = true;
+    private static int zivih = 0;   // v219: broj živih prozora (nov se pravi pre nego što se stari ugasi)
+    static synchronized boolean ziv() { return zivih > 0; }
+    private static synchronized void broj(int k) { zivih += k; }
 
     private int dp(float v) { return Math.round(v * gustina); }
 
@@ -41,19 +48,15 @@ public class VidzetEkran extends Activity {
     protected void onCreate(Bundle b) {
         super.onCreate(b);
         gustina = getResources().getDisplayMetrics().density;
-        JSONObject d = ArhivaVidzet.podaci(this);
-
-        ScrollView sv = new ScrollView(this);
+        broj(1);
+        sv = new ScrollView(this);
         sv.setBackgroundColor(POZADINA);
         sv.setFillViewport(true);
         kolona = new LinearLayout(this);
         kolona.setOrientation(LinearLayout.VERTICAL);
         kolona.setPadding(dp(16), dp(16), dp(16), dp(24));
         sv.addView(kolona, new ScrollView.LayoutParams(ViewGroup.LayoutParams.MATCH_PARENT, ViewGroup.LayoutParams.WRAP_CONTENT));
-
-        zaglavlje(d);
-        if (!ArhivaVidzet.bezPodsetnika(d)) podsetnici(d);
-        dokumenti(d);
+        nacrtaj();
 
         // Android 15+: prozor ide do ivica ekrana — sadržaj se pomera ispod statusne i donje trake
         sv.setOnApplyWindowInsetsListener((v, in) -> {
@@ -68,6 +71,28 @@ public class VidzetEkran extends Activity {
             return in;
         });
         setContentView(sv);
+    }
+
+    /* sadržaj iz podataka vidžeta (isti koje Arhiva šalje vidžetu) */
+    private void nacrtaj() {
+        kolona.removeAllViews();
+        JSONObject d = ArhivaVidzet.podaci(this);
+        zaglavlje(d);
+        if (!ArhivaVidzet.bezPodsetnika(d)) podsetnici(d);
+        dokumenti(d);
+    }
+
+    @Override
+    protected void onResume() {
+        super.onResume();
+        if (prvi) { prvi = false; return; }
+        nacrtaj();   // v219: povratak iz Arhive — izmene iz „Uredi“ odmah vidljive
+    }
+
+    @Override
+    protected void onDestroy() {
+        broj(-1);
+        super.onDestroy();
     }
 
     private GradientDrawable okvir(int boja, int ivica, float r) {
@@ -230,7 +255,6 @@ public class VidzetEkran extends Activity {
         Intent i = new Intent(this, MainActivity.class).setAction(Intent.ACTION_VIEW)
             .putExtra(PrecicaPlugin.EXTRA, id).putExtra(PrecicaPlugin.VRSTA, vrsta)
             .addFlags(Intent.FLAG_ACTIVITY_NEW_TASK);
-        startActivity(i);
-        finish();
+        startActivity(i);   // v219: bez finish() — prozor čeka ispod Arhive
     }
 }

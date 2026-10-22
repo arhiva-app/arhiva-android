@@ -24,12 +24,12 @@
 
         </activity>
 
-        <!-- v216 prozor vidžeta preko celog ekrana (samo gledanje); poseban zadatak, ne ostaje u skorašnjim -->
+        <!-- v216 prozor vidžeta preko celog ekrana (samo gledanje); poseban zadatak, ne ostaje u skorašnjim.
+             v219: bez noHistory — ostaje živ ispod Arhive, da korak nazad vrati u njega -->
         <activity
             android:name=".VidzetEkran"
             android:exported="false"
             android:excludeFromRecents="true"
-            android:noHistory="true"
             android:taskAffinity="com.arhiva.probna.vidzet"
             android:theme="@style/VidzetTema" />
 

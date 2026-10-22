@@ -21,31 +21,44 @@ import com.getcapacitor.annotation.CapacitorPlugin;
    - biometrija({naslov, podnaslov, dugme}): Androidov prozor za otisak ili lice; dugme ("Unesi PIN") vodi na PIN Arhive.
      Vraća {ok:true} ili {ok:false, razlog:'dugme'|'otkazano'|'nema'|'greska', kod}.
    - potvrdiTelefonom({naslov}): otisak, lice ili PIN/šablon TELEFONA (za zaboravljen PIN Arhive). {ok}
-   - ekran(): {ugasen: vreme poslednjeg gašenja ekrana (ms)}; uz to događaj "ekranUgasen".
+   - ekran(): {ugasen: vreme poslednjeg gašenja ekrana (ms), pratiOd: od kada se gašenje prati (ms)}; uz to događaj "ekranUgasen".
+     v219: prijemnik je jedan za ceo proces (ne odjavljuje se kad se Arhiva zatvori), pa pri ponovnom pokretanju Arhive
+     u istom procesu tačno se zna da li je ekran gašen; pratiOd > vreme odlaska = proces je bio ugašen (ne zna se → zaključaj).
    Klase biometrije (zvanična dokumentacija androidx.biometric): BIOMETRIC_WEAK obuhvata i otključavanje licem kamerom;
    BIOMETRIC_WEAK | DEVICE_CREDENTIAL radi na svim verzijama (STRONG | DEVICE_CREDENTIAL ne radi na API 28-29). */
 @CapacitorPlugin(name = "Zakljucavanje")
 public class ZakljucavanjePlugin extends Plugin {
-    private static volatile long ugasen = 0;
-    private BroadcastReceiver prijemnik;
+    private static volatile long ugasen = 0, pratiOd = 0;
+    private static volatile ZakljucavanjePlugin tekuci;
+    private static BroadcastReceiver prijemnik;
 
     @Override
     public void load() {
-        prijemnik = new BroadcastReceiver() {
-            @Override
-            public void onReceive(Context c, Intent i) {
-                ugasen = System.currentTimeMillis();
-                notifyListeners("ekranUgasen", new JSObject(), true);
+        tekuci = this;
+        synchronized (ZakljucavanjePlugin.class) {
+            if (prijemnik == null) {
+                prijemnik = new BroadcastReceiver() {
+                    @Override
+                    public void onReceive(Context c, Intent i) {
+                        ugasen = System.currentTimeMillis();
+                        ZakljucavanjePlugin p = tekuci;
+                        if (p != null) p.javiGasenje();
+                    }
+                };
+                // samo sistemsko obaveštenje: Android 14+ tada ne traži oznaku EXPORTED/NOT_EXPORTED
+                getContext().getApplicationContext().registerReceiver(prijemnik, new IntentFilter(Intent.ACTION_SCREEN_OFF));
+                pratiOd = System.currentTimeMillis();
             }
-        };
-        // samo sistemsko obaveštenje: Android 14+ tada ne traži oznaku EXPORTED/NOT_EXPORTED
-        getContext().getApplicationContext().registerReceiver(prijemnik, new IntentFilter(Intent.ACTION_SCREEN_OFF));
+        }
+    }
+
+    private void javiGasenje() {
+        notifyListeners("ekranUgasen", new JSObject(), true);
     }
 
     @Override
     protected void handleOnDestroy() {
-        try { if (prijemnik != null) getContext().getApplicationContext().unregisterReceiver(prijemnik); } catch (Exception ignored) {}
-        prijemnik = null;
+        if (tekuci == this) tekuci = null;   // v219: prijemnik ostaje (ceo proces), samo se ne javlja zatvorenoj Arhivi
     }
 
     @PluginMethod
@@ -62,6 +75,7 @@ public class ZakljucavanjePlugin extends Plugin {
     public void ekran(PluginCall call) {
         JSObject r = new JSObject();
         r.put("ugasen", ugasen);
+        r.put("pratiOd", pratiOd);
         call.resolve(r);
     }
 
