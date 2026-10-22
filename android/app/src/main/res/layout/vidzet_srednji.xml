@@ -32,6 +32,7 @@
     </LinearLayout>
     <View android:layout_width="match_parent" android:layout_height="4dp" />
     <LinearLayout
+        android:id="@+id/vz_rok_blok"
         android:layout_width="match_parent"
         android:layout_height="wrap_content"
         android:orientation="vertical">

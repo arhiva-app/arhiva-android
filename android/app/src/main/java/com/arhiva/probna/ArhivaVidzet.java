@@ -25,8 +25,9 @@ import org.json.JSONObject;
 
 /* v214 Vidžet Arhive na početnom ekranu (zvanično: AppWidgetProvider, RemoteViews; Android 12+ prilagodljivi prikazi
    po veličini — RemoteViews(Map<SizeF, RemoteViews>)). Veličinu bira korisnik (dug pritisak, povlačenje ivica):
-   mali (1 × 1): znak Arhive i broj rokova koji traže pažnju (isto kao zvonce u Arhivi); srednji: 3 najbliža roka;
-   veliki: rokovi i do 4 izabrana dokumenta. Podatke šalje Arhiva (dodatak Vidzet → SharedPreferences, sličice u fajlovima);
+   mali (1 × 1): znak Arhive i broj podsetnika koji traže pažnju (isto kao zvonce u Arhivi); srednji: 3 najbliža podsetnika;
+   veliki: podsetnici i do 4 izabrana dokumenta. v215: Arhiva šalje samo podsetnike koje je korisnik izabrao (Svi · Izabrani ·
+   Nijedan); kod „Nijedan“ (mode) blok podsetnika se sakriva, a srednja veličina pokazuje dokumente. Podatke šalje Arhiva (dodatak Vidzet → SharedPreferences, sličice u fajlovima);
    dani do roka se računaju ovde, pri svakom osvežavanju (updatePeriodMillis = 1 h), da broj i boje važe i kad Arhiva nije otvarana.
    Dodir otvara Arhivu (dodatak Precica: EXTRA = id dokumenta ili „-“, VRSTA = „vidzet“); logika je u Arhivi, blok VIDŽET. */
 public class ArhivaVidzet extends AppWidgetProvider {
@@ -72,13 +73,13 @@ public class ArhivaVidzet extends AppWidgetProvider {
         if (Build.VERSION.SDK_INT >= 31) {
             Map<SizeF, RemoteViews> v = new HashMap<>();
             v.put(new SizeF(40f, 40f), mali(c, d));
-            v.put(new SizeF(180f, 100f), srednji(c, d, false));
+            v.put(new SizeF(180f, 100f), srednji(c, d, bezPodsetnika(d)));   // v215: bez podsetnika srednji pokazuje dokumente
             v.put(new SizeF(180f, 170f), srednji(c, d, true));
             rv = new RemoteViews(v);
         } else {
             Bundle o = m.getAppWidgetOptions(id);
             int w = o.getInt(AppWidgetManager.OPTION_APPWIDGET_MIN_WIDTH), h = o.getInt(AppWidgetManager.OPTION_APPWIDGET_MAX_HEIGHT);
-            rv = (w >= 180 && h >= 170) ? srednji(c, d, true) : (w >= 180 && h >= 100) ? srednji(c, d, false) : mali(c, d);
+            rv = (w >= 180 && h >= 170) ? srednji(c, d, true) : (w >= 180 && h >= 100) ? srednji(c, d, bezPodsetnika(d)) : mali(c, d);
         }
         m.updateAppWidget(id, rv);
     }
@@ -89,6 +90,11 @@ public class ArhivaVidzet extends AppWidgetProvider {
             .addFlags(Intent.FLAG_ACTIVITY_NEW_TASK);
         // različit kod = posebna namera po redu/dokumentu (namere se inače razlikuju samo po dodacima)
         return PendingIntent.getActivity(c, kod, i, PendingIntent.FLAG_UPDATE_CURRENT | PendingIntent.FLAG_IMMUTABLE);
+    }
+
+    /* v215: korisnik je izabrao „Nijedan“ — vidžet bez podsetnika (samo dokumenti, bez broja) */
+    private static boolean bezPodsetnika(JSONObject d) {
+        return "nijedan".equals(d.optString("mode"));
     }
 
     private static String txt(JSONObject d, String k, String pod) {
@@ -172,9 +178,12 @@ public class ArhivaVidzet extends AppWidgetProvider {
         }
         for (int k = prikazano; k < REDOVI.length; k++) v.setViewVisibility(REDOVI[k][0], View.GONE);
         v.setViewVisibility(R.id.vz_prazno, prikazano == 0 ? View.VISIBLE : View.GONE);
-        v.setTextViewText(R.id.vz_prazno, txt(d, prikazano == 0 && !d.has("rokovi") ? "open" : "none", prikazano == 0 && !d.has("rokovi") ? "Otvori Arhivu" : "Nema rokova."));
+        v.setTextViewText(R.id.vz_prazno, txt(d, prikazano == 0 && !d.has("rokovi") ? "open" : "none", prikazano == 0 && !d.has("rokovi") ? "Otvori Arhivu" : "Nema podsetnika."));
+        boolean bez = bezPodsetnika(d);
+        v.setViewVisibility(R.id.vz_rok_blok, bez ? View.GONE : View.VISIBLE);
         if (veliki) {
-            v.setTextViewText(R.id.vz_s_rok, txt(d, "rokovi", "Rokovi"));
+            v.setTextViewText(R.id.vz_s_rok, txt(d, "rokovi", "Podsetnici"));
+            v.setViewVisibility(R.id.vz_s_rok, bez ? View.GONE : View.VISIBLE);
             v.setTextViewText(R.id.vz_s_dok, txt(d, "dokumenti", "Izabrani dokumenti"));
             JSONArray a = d.optJSONArray("docs");
             int n = a == null ? 0 : Math.min(a.length(), DOKUMENTI.length);
