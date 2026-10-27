@@ -31,15 +31,21 @@ public class VidzetPlugin extends Plugin {
             JSONObject d = new JSONObject(call.getString("podaci", "{}"));
             File dir = new File(c.getFilesDir(), "vidzet");
             if (!dir.exists()) dir.mkdirs();
-            JSONArray a = d.optJSONArray("docs");
-            for (int k = 0; k < 4; k++) {
-                File f = ArhivaVidzet.slika(c, k);
-                JSONObject o = (a != null && k < a.length()) ? a.optJSONObject(k) : null;
-                String s = o == null ? null : o.optString("s", null);
-                if (o != null) o.remove("s");
-                if (s == null || s.isEmpty()) { if (f.exists()) f.delete(); continue; }
-                try (FileOutputStream out = new FileOutputStream(f)) { out.write(Base64.decode(s, Base64.DEFAULT)); }
+            /* v234: sličice — zajednički vidžet (docs → dK.png) i svaki vidžet posebno (vidzeti.<id>.docs → w<id>_K.png);
+               fajl koji ovaj put nije upisan se briše (dokument skinut, vidžet sklonjen) */
+            java.util.HashSet<String> upisano = new java.util.HashSet<>();
+            upisi(c, d.optJSONArray("docs"), "d", upisano);
+            JSONObject ws = d.optJSONObject("vidzeti");
+            if (ws != null) {
+                java.util.Iterator<String> it = ws.keys();
+                while (it.hasNext()) {
+                    String id = it.next();
+                    JSONObject w = ws.optJSONObject(id);
+                    if (w != null) upisi(c, w.optJSONArray("docs"), "w" + id + "_", upisano);
+                }
             }
+            File[] sve = dir.listFiles();
+            if (sve != null) for (File f : sve) if (!upisano.contains(f.getName())) f.delete();
             c.getSharedPreferences(ArhivaVidzet.PREFS, Context.MODE_PRIVATE).edit().putString(ArhivaVidzet.KLJUC, d.toString()).apply();
             ArhivaVidzet.osvezi(c);
             JSObject r = new JSObject();
@@ -50,11 +56,28 @@ public class VidzetPlugin extends Plugin {
         }
     }
 
+    private static void upisi(Context c, JSONArray a, String pref, java.util.Set<String> upisano) throws Exception {
+        if (a == null) return;
+        for (int k = 0; k < 4 && k < a.length(); k++) {
+            JSONObject o = a.optJSONObject(k);
+            String s = o == null ? null : o.optString("s", null);
+            if (o != null) o.remove("s");
+            if (s == null || s.isEmpty()) continue;
+            File f = ArhivaVidzet.slika(c, pref, k);
+            try (FileOutputStream out = new FileOutputStream(f)) { out.write(Base64.decode(s, Base64.DEFAULT)); }
+            upisano.add(f.getName());
+        }
+    }
+
     @PluginMethod
     public void stanje(PluginCall call) {
         Context c = getContext();
         JSObject r = new JSObject();
-        r.put("broj", ArhivaVidzet.ids(c).length);
+        int[] ids = ArhivaVidzet.ids(c);
+        r.put("broj", ids.length);
+        JSONArray lista = new JSONArray();   // v234: koji vidžeti su na početnom ekranu (svaki ima svoje podatke u Arhivi)
+        for (int id : ids) lista.put(String.valueOf(id));
+        r.put("ids", lista);
         boolean moze = false;
         if (Build.VERSION.SDK_INT >= 26) {
             try { moze = AppWidgetManager.getInstance(c).isRequestPinAppWidgetSupported(); } catch (Exception e) { moze = false; }

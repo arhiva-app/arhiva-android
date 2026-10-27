@@ -44,6 +44,12 @@ public class ArhivaVidzet extends AppWidgetProvider {
         for (int id : ids) azuriraj(c, m, id);
     }
 
+    /* v234: sklonjen vidžet — brišu se njegove sličice (zapis u Arhivi se briše kad Arhiva sledeći put pita koji vidžeti postoje) */
+    @Override
+    public void onDeleted(Context c, int[] ids) {
+        for (int id : ids) for (int k = 0; k < 4; k++) { File f = slika(c, "w" + id + "_", k); if (f.exists()) f.delete(); }
+    }
+
     @Override
     public void onAppWidgetOptionsChanged(Context c, AppWidgetManager m, int id, Bundle o) {
         azuriraj(c, m, id);   // Android 11 i stariji: prikaz po novoj veličini
@@ -58,8 +64,46 @@ public class ArhivaVidzet extends AppWidgetProvider {
         for (int id : ids(c)) azuriraj(c, m, id);
     }
 
-    static File slika(Context c, int k) {
-        return new File(new File(c.getFilesDir(), "vidzet"), "d" + k + ".png");
+    /* sličica k-tog dokumenta: „d“ = zajednički vidžet (stariji web), „w<id>_“ = vidžet <id> (v234) */
+    static File slika(Context c, String pref, int k) {
+        return new File(new File(c.getFilesDir(), "vidzet"), pref + k + ".png");
+    }
+
+    /* v234 (Zoran): svaki vidžet samostalan — Arhiva šalje „vidzeti“ {"<id>": {n, mode, rokovi, docs}}; ovde se pravi podatak
+       za jedan vidžet u istom obliku kao ranije (ostatak koda se ne menja). Vidžet koji Arhiva još nije videla (upravo
+       postavljen): „Arhiva“, svi podsetnici, bez dokumenata — Arhiva mu da ime kad se sledeći put otvori. Bez „vidzeti“
+       (stariji web): jedan zajednički podatak kao do sada. */
+    static JSONObject za(JSONObject d, int id) {
+        JSONObject ws = d.optJSONObject("vidzeti");
+        if (ws == null) return d;
+        JSONObject w = ws.optJSONObject(String.valueOf(id)), o = new JSONObject();
+        try {
+            JSONObject l = d.optJSONObject("L");
+            l = l == null ? new JSONObject() : new JSONObject(l.toString());
+            o.put("lang", d.optString("lang"));
+            if (w != null) {
+                l.put("title", w.optString("n", "Arhiva"));
+                o.put("mode", w.optString("mode", "svi"));
+                JSONArray r = w.optJSONArray("rokovi"), a = w.optJSONArray("docs");
+                o.put("rokovi", r == null ? new JSONArray() : r);
+                o.put("docs", a == null ? new JSONArray() : a);
+            } else {
+                l.put("title", "Arhiva");
+                o.put("mode", "svi");
+                JSONArray s = d.optJSONArray("svi");
+                if (s != null) o.put("rokovi", s);
+                o.put("docs", new JSONArray());
+            }
+            o.put("L", l);
+            o.put("_f", "w" + id + "_");
+        } catch (Exception e) { /* ostaje ono što je upisano */ }
+        return o;
+    }
+
+    /* zahtev za PendingIntent: različit po vidžetu i po mestu na njemu (isti kod = ista namera, pa bi dodir na jedan
+       vidžet otvorio drugi — zvanično: PendingIntent se razlikuje po requestCode, ne po dodacima) */
+    static int kod(int id, int k) {
+        return (id & 0x3FFFFF) * 32 + k;
     }
 
     static JSONObject podaci(Context c) {
@@ -68,18 +112,18 @@ public class ArhivaVidzet extends AppWidgetProvider {
     }
 
     private static void azuriraj(Context c, AppWidgetManager m, int id) {
-        JSONObject d = podaci(c);
+        JSONObject d = za(podaci(c), id);
         RemoteViews rv;
         if (Build.VERSION.SDK_INT >= 31) {
             Map<SizeF, RemoteViews> v = new HashMap<>();
-            v.put(new SizeF(40f, 40f), mali(c, d));
-            v.put(new SizeF(180f, 100f), srednji(c, d, bezPodsetnika(d)));   // v215: bez podsetnika srednji pokazuje dokumente
-            v.put(new SizeF(180f, 170f), srednji(c, d, true));
+            v.put(new SizeF(40f, 40f), mali(c, d, id));
+            v.put(new SizeF(180f, 100f), srednji(c, d, bezPodsetnika(d), id));   // v215: bez podsetnika srednji pokazuje dokumente
+            v.put(new SizeF(180f, 170f), srednji(c, d, true, id));
             rv = new RemoteViews(v);
         } else {
             Bundle o = m.getAppWidgetOptions(id);
             int w = o.getInt(AppWidgetManager.OPTION_APPWIDGET_MIN_WIDTH), h = o.getInt(AppWidgetManager.OPTION_APPWIDGET_MAX_HEIGHT);
-            rv = (w >= 180 && h >= 170) ? srednji(c, d, true) : (w >= 180 && h >= 100) ? srednji(c, d, bezPodsetnika(d)) : mali(c, d);
+            rv = (w >= 180 && h >= 170) ? srednji(c, d, true, id) : (w >= 180 && h >= 100) ? srednji(c, d, bezPodsetnika(d), id) : mali(c, d, id);
         }
         m.updateAppWidget(id, rv);
     }
@@ -147,8 +191,8 @@ public class ArhivaVidzet extends AppWidgetProvider {
 
     /* v221 (Zoran): dodir na vidžet (ne na red ili dokument) → prozor vidžeta, sada ekran UNUTAR Arhive (vrsta „vidzet-prozor“):
        jedna aplikacija, jedan zadatak — bez bljeska, bez dve Arhive u skorašnjim, nazad uvek jedan korak. */
-    private static PendingIntent prozor(Context c) {
-        return otvori(c, "-", "vidzet-prozor", 2);
+    private static PendingIntent prozor(Context c, int id) {
+        return otvori(c, String.valueOf(id), "vidzet-prozor", kod(id, 2));   // v234: id = koji vidžet je dodirnut
     }
 
     static JSONArray rokovi(JSONObject d) {
@@ -156,7 +200,7 @@ public class ArhivaVidzet extends AppWidgetProvider {
         return a == null ? new JSONArray() : a;
     }
 
-    private static RemoteViews mali(Context c, JSONObject d) {
+    private static RemoteViews mali(Context c, JSONObject d, int id) {
         RemoteViews v = new RemoteViews(c.getPackageName(), R.layout.vidzet_mali);
         int broj = 0; boolean proslo = false;
         JSONArray r = rokovi(d);
@@ -175,14 +219,14 @@ public class ArhivaVidzet extends AppWidgetProvider {
         } else {
             v.setViewVisibility(R.id.vz_broj, View.GONE);
         }
-        v.setOnClickPendingIntent(R.id.vz_koren, prozor(c));
+        v.setOnClickPendingIntent(R.id.vz_koren, prozor(c, id));
         return v;
     }
 
-    private static RemoteViews srednji(Context c, JSONObject d, boolean veliki) {
+    private static RemoteViews srednji(Context c, JSONObject d, boolean veliki, int id) {
         RemoteViews v = new RemoteViews(c.getPackageName(), veliki ? R.layout.vidzet_veliki : R.layout.vidzet_srednji);
         v.setTextViewText(R.id.vz_naslov, txt(d, "title", "Arhiva"));
-        v.setOnClickPendingIntent(R.id.vz_koren, prozor(c));
+        v.setOnClickPendingIntent(R.id.vz_koren, prozor(c, id));
         JSONArray r = rokovi(d);
         int prikazano = 0;
         for (int k = 0; k < r.length() && prikazano < REDOVI.length; k++) {
@@ -196,7 +240,7 @@ public class ArhivaVidzet extends AppWidgetProvider {
             v.setTextViewText(ids[1], o.optString("n"));
             v.setTextViewText(ids[2], kada(d, n, o.optString("f"), upoz));
             v.setTextColor(ids[2], boja(n, upoz));
-            v.setOnClickPendingIntent(ids[0], otvori(c, o.optString("id", "-"), 10 + prikazano));
+            v.setOnClickPendingIntent(ids[0], otvori(c, o.optString("id", "-"), kod(id, 10 + prikazano)));
         }
         for (int k = prikazano; k < REDOVI.length; k++) v.setViewVisibility(REDOVI[k][0], View.GONE);
         v.setViewVisibility(R.id.vz_prazno, prikazano == 0 ? View.VISIBLE : View.GONE);
@@ -217,14 +261,14 @@ public class ArhivaVidzet extends AppWidgetProvider {
                 v.setTextViewText(ids[2], o.optString("n"));
                 Bitmap b = null;
                 try {
-                    File f = slika(c, k);
+                    File f = slika(c, d.optString("_f", "d"), k);
                     if (f.exists()) {   // v216: sličice su sada 420 px (za prozor); vidžetu je dovoljna polovina (manji paket)
                         BitmapFactory.Options op = new BitmapFactory.Options(); op.inSampleSize = 2;
                         b = BitmapFactory.decodeFile(f.getAbsolutePath(), op);
                     }
                 } catch (Exception e) { b = null; }
                 if (b != null) v.setImageViewBitmap(ids[1], b); else v.setImageViewResource(ids[1], R.mipmap.ic_launcher);
-                v.setOnClickPendingIntent(ids[0], otvori(c, o.optString("id", "-"), 20 + k));
+                v.setOnClickPendingIntent(ids[0], otvori(c, o.optString("id", "-"), kod(id, 20 + k)));
             }
             v.setViewVisibility(R.id.vz_dok_red, n > 0 ? View.VISIBLE : View.GONE);
             v.setViewVisibility(R.id.vz_dok_prazno, n > 0 ? View.GONE : View.VISIBLE);
