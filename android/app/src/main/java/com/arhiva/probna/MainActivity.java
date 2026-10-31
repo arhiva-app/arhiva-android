@@ -36,6 +36,7 @@ public class MainActivity extends BridgeActivity {
         registerPlugin(PrecicaPlugin.class);
         registerPlugin(GoogleDrivePlugin.class);
         registerPlugin(VidzetPlugin.class);   // v214 vidžet na početnom ekranu
+        registerPlugin(PrimanjePlugin.class);   // v252 Podeli → Arhiva
         super.onCreate(savedInstanceState);
         // Galerija: Androidov birač fotografija umesto opšteg birača fajlova (brže, kao u Chrome-u)
         getBridge().getWebView().setWebChromeClient(new BiracSlika(getBridge(), this));
