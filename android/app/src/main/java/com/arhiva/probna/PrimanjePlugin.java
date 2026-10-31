@@ -111,7 +111,10 @@ public class PrimanjePlugin extends Plugin {
         try {
             File f = new File(call.getString("putanja", ""));
             if (!f.getCanonicalPath().startsWith(folder().getCanonicalPath() + File.separator)) { call.reject("PUTANJA"); return; }
-            long od = call.getLong("od", 0L);
+            /* v253: getLong u Capacitor-u 8 vraća podrazumevano kad je broj stigao kao Integer (svaki broj ispod 2^31),
+               pa je svaki deo bio prvi → beskonačna petlja za fajl veći od 1 MB. Broj se čita kao Number. */
+            Object ov = call.getData().opt("od");
+            long od = ov instanceof Number ? ((Number) ov).longValue() : 0L;
             try (RandomAccessFile raf = new RandomAccessFile(f, "r")) {
                 long ostalo = Math.max(0, raf.length() - od);
                 byte[] b = new byte[(int) Math.min(DEO, ostalo)];
@@ -120,6 +123,7 @@ public class PrimanjePlugin extends Plugin {
                 JSObject r = new JSObject();
                 r.put("podaci", Base64.encodeToString(b, Base64.NO_WRAP));
                 r.put("kraj", od + b.length >= raf.length());
+                r.put("od", od);   // v253: Arhiva proverava da je dobila baš traženi deo
                 call.resolve(r);
             }
         } catch (Exception e) {
