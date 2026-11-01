@@ -3,6 +3,7 @@ package com.arhiva.probna;
 import android.content.res.Configuration;
 import android.net.Uri;
 import android.os.Bundle;
+import android.view.View;
 import android.webkit.ValueCallback;
 import androidx.activity.result.ActivityResultLauncher;
 import androidx.activity.result.IntentSenderRequest;
@@ -40,6 +41,8 @@ public class MainActivity extends BridgeActivity {
         super.onCreate(savedInstanceState);
         // Galerija: Androidov birač fotografija umesto opšteg birača fajlova (brže, kao u Chrome-u)
         getBridge().getWebView().setWebChromeClient(new BiracSlika(getBridge(), this));
+        // v259: bez Androidovog efekta odbijanja/rastezanja na ivici liste (zvanično: View.setOverScrollMode, OVER_SCROLL_NEVER)
+        getBridge().getWebView().setOverScrollMode(View.OVER_SCROLL_NEVER);
         // SystemBars postavi svoju boju preko glavne niti; naša ide posle nje (ista nit, redom)
         getWindow().getDecorView().post(() -> TrakePlugin.primeni(this));
     }
