@@ -5,6 +5,8 @@ import android.app.Activity;
 import android.app.PendingIntent;
 import android.content.Intent;
 import androidx.activity.result.IntentSenderRequest;
+import android.os.Bundle;
+import com.getcapacitor.JSArray;
 import com.getcapacitor.JSObject;
 import com.getcapacitor.Plugin;
 import com.getcapacitor.PluginCall;
@@ -63,6 +65,39 @@ public class GoogleDrivePlugin extends Plugin {
         }
     }
 
+    /* PROBA DELJENJA (privremeno, 3.11.2026): zaseban Google prozor sa izborom naloga (uvek pita), po želji sa Google-ovim
+       biračem fajlova/fascikli (zvanično: developers.google.com/workspace/drive/picker/guides/desktop-mobile-picker —
+       samo drive.file, setOptOutIncludingGrantedScopes(true), Prompt CONSENT|SELECT_ACCOUNT, PICKER_OAUTH_TRIGGER;
+       izabrani ID-jevi u getTokenResponseParams()["picked_file_ids"]). Ne dira dozvolu za slanje na Drive.
+       proba({birac}) → {ok, token, ids:[…]} | {ok:false, razlog, poruka} */
+    @PluginMethod
+    public void proba(PluginCall call) {
+        final boolean birac = Boolean.TRUE.equals(call.getBoolean("birac", false));
+        AuthorizationRequest.Builder b = AuthorizationRequest.builder()
+            .setRequestedScopes(opseg())
+            .setOptOutIncludingGrantedScopes(true)
+            .setPrompt(AuthorizationRequest.Prompt.CONSENT | AuthorizationRequest.Prompt.SELECT_ACCOUNT);
+        if (birac) {
+            b.addResourceParameter(AuthorizationRequest.ResourceParameter.PICKER_OAUTH_TRIGGER, "true")
+             .addResourceParameter(AuthorizationRequest.ResourceParameter.PICKER_ALLOW_FOLDER_SELECTION, "true")
+             .addResourceParameter(AuthorizationRequest.ResourceParameter.PICKER_ALLOW_MULTIPLE, "true");
+        }
+        try {
+            Identity.getAuthorizationClient(getActivity()).authorize(b.build())
+                .addOnSuccessListener(r -> {
+                    if (!r.hasResolution()) { token(call, r); return; }
+                    PendingIntent pi = r.getPendingIntent();
+                    if (pi == null || !(getActivity() instanceof MainActivity)) { odbij(call, "greska", "nema prozora"); return; }
+                    if (cekam != null) odbij(cekam, "otkazano", null);
+                    cekam = call;
+                    ((MainActivity) getActivity()).googleDozvola(new IntentSenderRequest.Builder(pi.getIntentSender()).build());
+                })
+                .addOnFailureListener(e -> odbij(call, "greska", e.getMessage()));
+        } catch (Exception e) {
+            odbij(call, "greska", e.getMessage());
+        }
+    }
+
     @PluginMethod
     public void prekini(PluginCall call) {
         String nalog = call.getString("nalog", "");
@@ -85,6 +120,17 @@ public class GoogleDrivePlugin extends Plugin {
         JSObject o = new JSObject();
         o.put("ok", true);
         o.put("token", t);
+        /* proba deljenja: ID-jevi izabrani u Google-ovom biraču (zarezom odvojeni; vrednost može biti i niz) */
+        JSArray ids = new JSArray();
+        try {
+            Bundle pp = r.getTokenResponseParams();
+            Object raw = pp == null ? null : pp.get("picked_file_ids");
+            if (raw instanceof String) { for (String x : ((String) raw).split(",")) if (!x.trim().isEmpty()) ids.put(x.trim()); }
+            else if (raw instanceof String[]) { for (String x : (String[]) raw) if (x != null && !x.trim().isEmpty()) ids.put(x.trim()); }
+            else if (raw instanceof java.util.Collection) { for (Object x : (java.util.Collection<?>) raw) if (x != null) ids.put(String.valueOf(x).trim()); }
+            else if (raw != null) ids.put(String.valueOf(raw));
+        } catch (Exception e) { /* stariji Google Play servisi: bez ID-jeva */ }
+        o.put("ids", ids);
         c.resolve(o);
     }
 
