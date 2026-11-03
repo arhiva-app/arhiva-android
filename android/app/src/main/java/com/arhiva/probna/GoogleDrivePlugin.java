@@ -5,8 +5,6 @@ import android.app.Activity;
 import android.app.PendingIntent;
 import android.content.Intent;
 import androidx.activity.result.IntentSenderRequest;
-import android.os.Bundle;
-import com.getcapacitor.JSArray;
 import com.getcapacitor.JSObject;
 import com.getcapacitor.Plugin;
 import com.getcapacitor.PluginCall;
@@ -24,7 +22,7 @@ import java.util.List;
 /* Google Drive (v203): samo dozvola. Slanje fajlova radi web Arhiva (blok GOOGLE DRIVE) preko Drive REST API-ja.
    Zvanično (developer.android.com/identity/authorization): AuthorizationClient.authorize(); ako treba pristanak korisnika,
    rezultat ima PendingIntent (Google-ov prozor: izbor naloga, „Dozvoli“), inače odmah daje token.
-   - dozvola({interaktivno}): {ok:true, token} | {ok:false, razlog:'potrebna'|'otkazano'|'greska', poruka}
+   - dozvola({interaktivno, izbor, nalog}): {ok:true, token} | {ok:false, razlog:'potrebna'|'otkazano'|'greska', poruka}
      interaktivno=false nikad ne otvara prozor (slanje u pozadini): treba pristanak → 'potrebna'.
    - prekini({nalog}): revokeAccess — sledeće povezivanje opet traži izbor naloga i dozvolu.
    Pristup drive.file: samo fajlovi koje je Arhiva napravila. */
@@ -38,7 +36,14 @@ public class GoogleDrivePlugin extends Plugin {
     @PluginMethod
     public void dozvola(PluginCall call) {
         final boolean interaktivno = Boolean.TRUE.equals(call.getBoolean("interaktivno", false));
-        AuthorizationRequest zahtev = AuthorizationRequest.builder().setRequestedScopes(opseg()).build();
+        /* v278: izbor=true (Poveži) → Google uvek pokaže izbor naloga (Prompt.SELECT_ACCOUNT; CONSENT ovde vraća grešku 8 [28405],
+           proba 4.11.2026). nalog="…" (slanje u pozadini) → token samo za taj nalog, nikad za neki drugi na telefonu. */
+        final boolean izbor = interaktivno && Boolean.TRUE.equals(call.getBoolean("izbor", false));
+        final String nalog = call.getString("nalog", "");
+        AuthorizationRequest.Builder b = AuthorizationRequest.builder().setRequestedScopes(opseg());
+        if (izbor) b.setPrompt(AuthorizationRequest.Prompt.SELECT_ACCOUNT);
+        else if (nalog != null && !nalog.isEmpty()) b.setAccount(new Account(nalog, "com.google"));
+        AuthorizationRequest zahtev = b.build();
         Identity.getAuthorizationClient(getActivity()).authorize(zahtev)
             .addOnSuccessListener(r -> {
                 if (!r.hasResolution()) { token(call, r); return; }
@@ -58,7 +63,7 @@ public class GoogleDrivePlugin extends Plugin {
         cekam = null;
         if (c == null) return;
         if (kod != Activity.RESULT_OK || data == null) {
-            /* razlog ostaje „otkazano“ (Arhiva ga ne prikazuje kao grešku); poruka nosi Google-ov razlog ako ga je poslao */
+            /* razlog ostaje „otkazano“ (Arhiva ga ne prikazuje kao grešku); poruka nosi Google-ov razlog ako ga je poslao (dnevnik grešaka) */
             String det = "kod " + kod;
             if (data != null) {
                 try { Identity.getAuthorizationClient(getActivity()).getAuthorizationResultFromIntent(data); det += ", Google bez greške"; }
@@ -72,44 +77,6 @@ public class GoogleDrivePlugin extends Plugin {
             token(c, Identity.getAuthorizationClient(getActivity()).getAuthorizationResultFromIntent(data));
         } catch (ApiException e) {
             odbij(c, "greska", e.getMessage());
-        }
-    }
-
-    /* PROBA DELJENJA (privremeno, 3.11.2026): zaseban Google prozor sa izborom naloga (uvek pita), po želji sa Google-ovim
-       biračem fajlova/fascikli (zvanično: developers.google.com/workspace/drive/picker/guides/desktop-mobile-picker —
-       samo drive.file, setOptOutIncludingGrantedScopes(true), Prompt CONSENT|SELECT_ACCOUNT, PICKER_OAUTH_TRIGGER;
-       izabrani ID-jevi u getTokenResponseParams()["picked_file_ids"]). Ne dira dozvolu za slanje na Drive.
-       proba({birac}) → {ok, token, ids:[…]} | {ok:false, razlog, poruka} */
-    @PluginMethod
-    public void proba(PluginCall call) {
-        final boolean birac = Boolean.TRUE.equals(call.getBoolean("birac", false));
-        /* v2: Google je vratio 8 [28405] — da bi se našlo šta to izaziva, način se bira spolja:
-           prompt: "oba" (CONSENT|SELECT_ACCOUNT) | "pristanak" (CONSENT) | "nalog" (SELECT_ACCOUNT) | "bez"; optout: true/false */
-        final String prompt = call.getString("prompt", "oba");
-        final boolean optout = !Boolean.FALSE.equals(call.getBoolean("optout", true));
-        AuthorizationRequest.Builder b = AuthorizationRequest.builder().setRequestedScopes(opseg());
-        if (optout) b.setOptOutIncludingGrantedScopes(true);
-        if ("oba".equals(prompt)) b.setPrompt(AuthorizationRequest.Prompt.CONSENT | AuthorizationRequest.Prompt.SELECT_ACCOUNT);
-        else if ("pristanak".equals(prompt)) b.setPrompt(AuthorizationRequest.Prompt.CONSENT);
-        else if ("nalog".equals(prompt)) b.setPrompt(AuthorizationRequest.Prompt.SELECT_ACCOUNT);
-        if (birac) {
-            b.addResourceParameter(AuthorizationRequest.ResourceParameter.PICKER_OAUTH_TRIGGER, "true")
-             .addResourceParameter(AuthorizationRequest.ResourceParameter.PICKER_ALLOW_FOLDER_SELECTION, "true")
-             .addResourceParameter(AuthorizationRequest.ResourceParameter.PICKER_ALLOW_MULTIPLE, "true");
-        }
-        try {
-            Identity.getAuthorizationClient(getActivity()).authorize(b.build())
-                .addOnSuccessListener(r -> {
-                    if (!r.hasResolution()) { token(call, r); return; }
-                    PendingIntent pi = r.getPendingIntent();
-                    if (pi == null || !(getActivity() instanceof MainActivity)) { odbij(call, "greska", "nema prozora"); return; }
-                    if (cekam != null) odbij(cekam, "otkazano", null);
-                    cekam = call;
-                    ((MainActivity) getActivity()).googleDozvola(new IntentSenderRequest.Builder(pi.getIntentSender()).build());
-                })
-                .addOnFailureListener(e -> odbij(call, "greska", e.getMessage()));
-        } catch (Exception e) {
-            odbij(call, "greska", e.getMessage());
         }
     }
 
@@ -135,17 +102,6 @@ public class GoogleDrivePlugin extends Plugin {
         JSObject o = new JSObject();
         o.put("ok", true);
         o.put("token", t);
-        /* proba deljenja: ID-jevi izabrani u Google-ovom biraču (zarezom odvojeni; vrednost može biti i niz) */
-        JSArray ids = new JSArray();
-        try {
-            Bundle pp = r.getTokenResponseParams();
-            Object raw = pp == null ? null : pp.get("picked_file_ids");
-            if (raw instanceof String) { for (String x : ((String) raw).split(",")) if (!x.trim().isEmpty()) ids.put(x.trim()); }
-            else if (raw instanceof String[]) { for (String x : (String[]) raw) if (x != null && !x.trim().isEmpty()) ids.put(x.trim()); }
-            else if (raw instanceof java.util.Collection) { for (Object x : (java.util.Collection<?>) raw) if (x != null) ids.put(String.valueOf(x).trim()); }
-            else if (raw != null) ids.put(String.valueOf(raw));
-        } catch (Exception e) { /* stariji Google Play servisi: bez ID-jeva */ }
-        o.put("ids", ids);
         c.resolve(o);
     }
 
