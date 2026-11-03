@@ -57,7 +57,17 @@ public class GoogleDrivePlugin extends Plugin {
         PluginCall c = cekam;
         cekam = null;
         if (c == null) return;
-        if (kod != Activity.RESULT_OK || data == null) { odbij(c, "otkazano", null); return; }
+        if (kod != Activity.RESULT_OK || data == null) {
+            /* razlog ostaje „otkazano“ (Arhiva ga ne prikazuje kao grešku); poruka nosi Google-ov razlog ako ga je poslao */
+            String det = "kod " + kod;
+            if (data != null) {
+                try { Identity.getAuthorizationClient(getActivity()).getAuthorizationResultFromIntent(data); det += ", Google bez greške"; }
+                catch (ApiException e) { det += ", Google " + e.getStatusCode() + ": " + e.getMessage(); }
+                catch (Exception e) { det += ", " + e; }
+            } else det += ", bez podataka";
+            odbij(c, "otkazano", det);
+            return;
+        }
         try {
             token(c, Identity.getAuthorizationClient(getActivity()).getAuthorizationResultFromIntent(data));
         } catch (ApiException e) {
