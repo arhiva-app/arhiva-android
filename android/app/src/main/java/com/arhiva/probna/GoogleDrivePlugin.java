@@ -83,10 +83,15 @@ public class GoogleDrivePlugin extends Plugin {
     @PluginMethod
     public void proba(PluginCall call) {
         final boolean birac = Boolean.TRUE.equals(call.getBoolean("birac", false));
-        AuthorizationRequest.Builder b = AuthorizationRequest.builder()
-            .setRequestedScopes(opseg())
-            .setOptOutIncludingGrantedScopes(true)
-            .setPrompt(AuthorizationRequest.Prompt.CONSENT | AuthorizationRequest.Prompt.SELECT_ACCOUNT);
+        /* v2: Google je vratio 8 [28405] — da bi se našlo šta to izaziva, način se bira spolja:
+           prompt: "oba" (CONSENT|SELECT_ACCOUNT) | "pristanak" (CONSENT) | "nalog" (SELECT_ACCOUNT) | "bez"; optout: true/false */
+        final String prompt = call.getString("prompt", "oba");
+        final boolean optout = !Boolean.FALSE.equals(call.getBoolean("optout", true));
+        AuthorizationRequest.Builder b = AuthorizationRequest.builder().setRequestedScopes(opseg());
+        if (optout) b.setOptOutIncludingGrantedScopes(true);
+        if ("oba".equals(prompt)) b.setPrompt(AuthorizationRequest.Prompt.CONSENT | AuthorizationRequest.Prompt.SELECT_ACCOUNT);
+        else if ("pristanak".equals(prompt)) b.setPrompt(AuthorizationRequest.Prompt.CONSENT);
+        else if ("nalog".equals(prompt)) b.setPrompt(AuthorizationRequest.Prompt.SELECT_ACCOUNT);
         if (birac) {
             b.addResourceParameter(AuthorizationRequest.ResourceParameter.PICKER_OAUTH_TRIGGER, "true")
              .addResourceParameter(AuthorizationRequest.ResourceParameter.PICKER_ALLOW_FOLDER_SELECTION, "true")
