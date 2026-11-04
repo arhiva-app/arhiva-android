@@ -133,10 +133,13 @@ public class FasciklePlugin extends Plugin {
                 java.util.ArrayList<Object[]> nadjeni = new java.util.ArrayList<>();
                 try (Cursor c = cr.query(deca, kol, null, null, null)) {
                     while (c != null && c.moveToNext()) {
-                        String id = c.getString(0), mime = c.getString(2);
+                        String id = c.getString(0), ime = c.getString(1), mime = c.getString(2);
                         long vreme = c.isNull(3) ? 0 : c.getLong(3);
+                        // v283: skriveni fajlovi (ime počinje tačkom) se preskaču — obrisano u galeriji („.trashed-…“),
+                        // fajl koji se još upisuje („.pending-…“), sistemski (.nomedia); galerija ih ne prikazuje.
+                        if (ime == null || ime.startsWith(".")) continue;
                         if (DocumentsContract.Document.MIME_TYPE_DIR.equals(mime) || vreme <= posle || vec.contains(id)) continue;
-                        nadjeni.add(new Object[] { id, c.getString(1), mime, vreme, c.isNull(4) ? 0L : c.getLong(4) });
+                        nadjeni.add(new Object[] { id, ime, mime, vreme, c.isNull(4) ? 0L : c.getLong(4) });
                     }
                 }
                 nadjeni.sort((x, y) -> Long.compare((long) x[3], (long) y[3]));
