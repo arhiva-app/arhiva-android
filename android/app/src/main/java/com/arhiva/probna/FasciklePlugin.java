@@ -6,6 +6,8 @@ import android.content.ContentResolver;
 import android.content.Intent;
 import android.content.UriPermission;
 import android.database.Cursor;
+import android.location.Address;
+import android.location.Geocoder;
 import android.net.Uri;
 import android.os.Build;
 import android.provider.DocumentsContract;
@@ -26,6 +28,8 @@ import java.io.FileOutputStream;
 import java.io.InputStream;
 import java.io.RandomAccessFile;
 import java.util.HashSet;
+import java.util.List;
+import java.util.Locale;
 import org.json.JSONArray;
 
 /* v272 (Zoran 3.11.): praćene fascikle — korisnik jednom izabere fasciklu (ACTION_OPEN_DOCUMENT_TREE, Storage Access Framework),
@@ -50,6 +54,41 @@ public class FasciklePlugin extends Plugin {
             JSObject o = new JSObject(); o.put("stanje", "granted"); call.resolve(o); return;
         }
         requestPermissionForAlias("lokacija", call, "posleDozvoleLokacije");
+    }
+
+    /* v287: naziv mesta iz koordinata — Androidov Geocoder (android.location.Geocoder; od API 33 sa GeocodeListener-om,
+       ranije sinhrono u posebnoj niti). mesto({lat, lon, jezik}) → {mesto, deo, okrug, oblast, drzava} ili {} kad nema rezultata;
+       greška (npr. bez mreže) → reject, pa Arhiva pokuša kasnije. */
+    @PluginMethod
+    public void mesto(PluginCall call) {
+        Double lat = call.getDouble("lat"), lon = call.getDouble("lon");
+        if (lat == null || lon == null) { call.reject("nema koordinata"); return; }
+        if (!Geocoder.isPresent()) { call.reject("Geocoder nije dostupan"); return; }
+        final Geocoder g = new Geocoder(getContext(), Locale.forLanguageTag(call.getString("jezik", "sr-Latn-RS")));
+        final double la = lat, lo = lon;
+        if (Build.VERSION.SDK_INT >= 33) {
+            g.getFromLocation(la, lo, 1, new Geocoder.GeocodeListener() {
+                @Override public void onGeocode(List<Address> a) { call.resolve(adresa(a)); }
+                @Override public void onError(String poruka) { call.reject(poruka == null ? "Geocoder greška" : poruka); }
+            });
+        } else {
+            new Thread(() -> {
+                try { call.resolve(adresa(g.getFromLocation(la, lo, 1))); }
+                catch (Exception e) { call.reject(String.valueOf(e.getMessage())); }
+            }).start();
+        }
+    }
+
+    private static JSObject adresa(List<Address> l) {
+        JSObject o = new JSObject();
+        if (l == null || l.isEmpty()) return o;
+        Address a = l.get(0);
+        if (a.getLocality() != null) o.put("mesto", a.getLocality());
+        if (a.getSubLocality() != null) o.put("deo", a.getSubLocality());
+        if (a.getSubAdminArea() != null) o.put("okrug", a.getSubAdminArea());
+        if (a.getAdminArea() != null) o.put("oblast", a.getAdminArea());
+        if (a.getCountryName() != null) o.put("drzava", a.getCountryName());
+        return o;
     }
 
     @PermissionCallback
