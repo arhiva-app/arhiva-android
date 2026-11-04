@@ -1,11 +1,13 @@
 package com.arhiva.probna;
 
+import android.Manifest;
 import android.app.Activity;
 import android.content.ContentResolver;
 import android.content.Intent;
 import android.content.UriPermission;
 import android.database.Cursor;
 import android.net.Uri;
+import android.os.Build;
 import android.provider.DocumentsContract;
 import android.util.Base64;
 import androidx.activity.result.ActivityResult;
@@ -13,9 +15,12 @@ import com.getcapacitor.JSArray;
 import com.getcapacitor.JSObject;
 import com.getcapacitor.Plugin;
 import com.getcapacitor.PluginCall;
+import com.getcapacitor.PermissionState;
 import com.getcapacitor.PluginMethod;
 import com.getcapacitor.annotation.ActivityCallback;
 import com.getcapacitor.annotation.CapacitorPlugin;
+import com.getcapacitor.annotation.Permission;
+import com.getcapacitor.annotation.PermissionCallback;
 import java.io.File;
 import java.io.FileOutputStream;
 import java.io.InputStream;
@@ -32,8 +37,26 @@ import org.json.JSONArray;
      kopiraju se u keš (cacheDir/fascikle) → [{id, ime, mime, vreme, velicina, putanja}] (najstariji prvi, najviše max)
    - deo({putanja, od}) / obrisi(): čitanje kopije u delovima (kao Primanje) i brisanje kopija
    - otpusti({uri}): pravo se vraća Androidu (prekidač isključen) */
-@CapacitorPlugin(name = "Fascikle")
+/* v286 (Zoran 4.11.): dozvola „pristup lokaciji u medijima“ (ACCESS_MEDIA_LOCATION, Android 10+). Bez nje Android u slikama
+   koje Arhiva čita upisuje nule umesto GPS koordinata (proba v285: „GPS skriven“).
+   - dozvolaLokacije(): pita jednom (Androidov prozor), vraća {stanje: "granted" | "denied" | "prompt..."} */
+@CapacitorPlugin(name = "Fascikle", permissions = {
+    @Permission(alias = "lokacija", strings = { Manifest.permission.ACCESS_MEDIA_LOCATION })
+})
 public class FasciklePlugin extends Plugin {
+    @PluginMethod
+    public void dozvolaLokacije(PluginCall call) {
+        if (Build.VERSION.SDK_INT < Build.VERSION_CODES.Q || getPermissionState("lokacija") == PermissionState.GRANTED) {
+            JSObject o = new JSObject(); o.put("stanje", "granted"); call.resolve(o); return;
+        }
+        requestPermissionForAlias("lokacija", call, "posleDozvoleLokacije");
+    }
+
+    @PermissionCallback
+    private void posleDozvoleLokacije(PluginCall call) {
+        JSObject o = new JSObject(); o.put("stanje", getPermissionState("lokacija").toString()); call.resolve(o);
+    }
+
     private static final int DEO = 1024 * 1024;
 
     private File folder() {

@@ -99,4 +99,6 @@
     <uses-permission android:name="android.permission.CAMERA" />
     <!-- v194: vibracija (navigator.vibrate u WebView-u traži ovu dozvolu; obična dozvola, bez pitanja) -->
     <uses-permission android:name="android.permission.VIBRATE" />
+    <!-- v286: GPS iz slika (bez nje Android upisuje nule) -->
+    <uses-permission android:name="android.permission.ACCESS_MEDIA_LOCATION" />
 </manifest>
