@@ -29,6 +29,13 @@ public class MainActivity extends BridgeActivity {
             if (p != null) p.rezultat(res.getResultCode(), res.getData());
         });
 
+    // v315 (B3) Google-ov skener dokumenata (ML Kit); ishod ide dodatku Skener
+    private final ActivityResultLauncher<IntentSenderRequest> skenerProzor =
+        registerForActivityResult(new ActivityResultContracts.StartIntentSenderForResult(), res -> {
+            SkenerPlugin p = skenerDodatak();
+            if (p != null) p.rezultat(res.getResultCode(), res.getData());
+        });
+
     @Override
     public void onCreate(Bundle savedInstanceState) {
         registerPlugin(SacuvajKaoPlugin.class);   // pre super.onCreate (zvanična dokumentacija Capacitor-a)
@@ -40,6 +47,7 @@ public class MainActivity extends BridgeActivity {
         registerPlugin(PrimanjePlugin.class);   // v252 Podeli → Arhiva
         registerPlugin(BajtoviPlugin.class);   // v266 brz prenos fajla (bajtovi, bez base64)
         registerPlugin(FasciklePlugin.class);   // v272 praćene fascikle (snimci ekrana)
+        registerPlugin(SkenerPlugin.class);   // v315 skener dokumenata (ML Kit)
         super.onCreate(savedInstanceState);
         // Galerija: Androidov birač fotografija umesto opšteg birača fajlova (brže, kao u Chrome-u)
         getBridge().getWebView().setWebChromeClient(new BiracSlika(getBridge(), this));
@@ -69,6 +77,20 @@ public class MainActivity extends BridgeActivity {
             GoogleDrivePlugin p = googleDodatak();
             if (p != null) p.rezultat(RESULT_CANCELED, null);
         }
+    }
+
+    void pokreniSkener(IntentSenderRequest zahtev) {
+        try {
+            skenerProzor.launch(zahtev);
+        } catch (Exception e) {
+            SkenerPlugin p = skenerDodatak();
+            if (p != null) p.rezultat(RESULT_CANCELED, null);
+        }
+    }
+
+    private SkenerPlugin skenerDodatak() {
+        PluginHandle h = getBridge() == null ? null : getBridge().getPlugin("Skener");
+        return h == null ? null : (SkenerPlugin) h.getInstance();
     }
 
     private GoogleDrivePlugin googleDodatak() {
