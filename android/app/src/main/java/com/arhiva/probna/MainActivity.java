@@ -48,6 +48,7 @@ public class MainActivity extends BridgeActivity {
         registerPlugin(BajtoviPlugin.class);   // v266 brz prenos fajla (bajtovi, bez base64)
         registerPlugin(FasciklePlugin.class);   // v272 praćene fascikle (snimci ekrana)
         registerPlugin(SkenerPlugin.class);   // v315 skener dokumenata (ML Kit)
+        registerPlugin(TekstPlugin.class);   // v316 tekst iz slike (ML Kit)
         super.onCreate(savedInstanceState);
         // Galerija: Androidov birač fotografija umesto opšteg birača fajlova (brže, kao u Chrome-u)
         getBridge().getWebView().setWebChromeClient(new BiracSlika(getBridge(), this));

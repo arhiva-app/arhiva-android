@@ -90,6 +90,10 @@
                 android:name="android.support.FILE_PROVIDER_PATHS"
                 android:resource="@xml/file_paths"></meta-data>
         </provider>
+        <!-- v316 tekst iz slike: model ML Kit-a (latinica) se preuzima uz instalaciju sa Play-a (zvanično, text-recognition v2) -->
+        <meta-data
+            android:name="com.google.mlkit.vision.DEPENDENCIES"
+            android:value="ocr" />
     </application>
 
     <!-- Permissions -->
