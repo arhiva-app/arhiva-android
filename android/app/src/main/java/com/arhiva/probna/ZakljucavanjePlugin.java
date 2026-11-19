@@ -82,7 +82,7 @@ public class ZakljucavanjePlugin extends Plugin {
     @PluginMethod
     public void biometrija(PluginCall call) {
         BiometricPrompt.PromptInfo.Builder b = new BiometricPrompt.PromptInfo.Builder()
-            .setTitle(call.getString("naslov", "Arhiva"))
+            .setTitle(call.getString("naslov", "Life Archive"))
             .setNegativeButtonText(call.getString("dugme", "PIN"))
             .setAllowedAuthenticators(BiometricManager.Authenticators.BIOMETRIC_WEAK)
             .setConfirmationRequired(false);
@@ -94,7 +94,7 @@ public class ZakljucavanjePlugin extends Plugin {
     @PluginMethod
     public void potvrdiTelefonom(PluginCall call) {
         BiometricPrompt.PromptInfo info = new BiometricPrompt.PromptInfo.Builder()
-            .setTitle(call.getString("naslov", "Arhiva"))
+            .setTitle(call.getString("naslov", "Life Archive"))
             .setAllowedAuthenticators(BiometricManager.Authenticators.BIOMETRIC_WEAK | BiometricManager.Authenticators.DEVICE_CREDENTIAL)
             .build();
         prikazi(call, info);

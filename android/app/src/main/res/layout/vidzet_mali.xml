@@ -13,7 +13,7 @@
             android:layout_width="48dp"
             android:layout_height="48dp"
             android:layout_gravity="center"
-            android:contentDescription="Arhiva"
+            android:contentDescription="Life Archive"
             android:src="@mipmap/ic_launcher" />
         <TextView
             android:id="@+id/vz_broj"
@@ -40,7 +40,7 @@
         android:shadowColor="#99000000"
         android:shadowDy="1"
         android:shadowRadius="3"
-        android:text="Arhiva"
+        android:text="Life Archive"
         android:textColor="#FFFFFF"
         android:textSize="12sp" />
 </LinearLayout>

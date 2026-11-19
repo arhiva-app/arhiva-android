@@ -1,6 +1,6 @@
 {
   "appId": "com.arhiva.probna",
-  "appName": "Arhiva probna",
+  "appName": "Life Archive",
   "webDir": "www",
   "server": {
     "url": "https://arhiva-app.github.io/arhiva/",
@@ -10,6 +10,9 @@
     "LocalNotifications": {
       "smallIcon": "ic_stat_arhiva",
       "iconColor": "#B8955A"
+    },
+    "SystemBars": {
+      "insetsHandling": "disable"
     }
   }
 }

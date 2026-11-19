@@ -154,7 +154,7 @@ public class PrecicaPlugin extends Plugin {
             } catch (Exception e) { /* bez sličice → ikonica Arhive */ }
         }
         if (ik == null) ik = IconCompat.createWithResource(c, R.mipmap.ic_launcher);
-        String n = (naziv == null || naziv.trim().isEmpty()) ? "Arhiva" : naziv.trim();
+        String n = (naziv == null || naziv.trim().isEmpty()) ? "Life Archive" : naziv.trim();
         return new ShortcutInfoCompat.Builder(c, kljuc)
             .setShortLabel(n.length() > 25 ? n.substring(0, 25) : n)
             .setLongLabel(n.length() > 60 ? n.substring(0, 60) : n)

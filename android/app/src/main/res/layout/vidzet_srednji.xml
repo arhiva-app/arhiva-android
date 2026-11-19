@@ -27,7 +27,7 @@
             android:layout_width="wrap_content"
             android:layout_height="wrap_content"
             android:layout_marginLeft="8dp"
-            android:text="Arhiva"
+            android:text="Life Archive"
             android:textColor="#E9E8E4"
             android:textSize="14sp"
             android:textStyle="bold" />
@@ -124,7 +124,7 @@
             android:layout_width="match_parent"
             android:layout_height="wrap_content"
             android:paddingTop="6dp"
-            android:text="Otvori Arhivu"
+            android:text="Otvori Life Archive"
             android:textColor="#9A9A9F"
             android:textSize="13sp"
             android:visibility="gone" />

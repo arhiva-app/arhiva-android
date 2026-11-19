@@ -82,13 +82,13 @@ public class ArhivaVidzet extends AppWidgetProvider {
             l = l == null ? new JSONObject() : new JSONObject(l.toString());
             o.put("lang", d.optString("lang"));
             if (w != null) {
-                l.put("title", w.optString("n", "Arhiva"));
+                l.put("title", w.optString("n", "Life Archive"));
                 o.put("mode", w.optString("mode", "svi"));
                 JSONArray r = w.optJSONArray("rokovi"), a = w.optJSONArray("docs");
                 o.put("rokovi", r == null ? new JSONArray() : r);
                 o.put("docs", a == null ? new JSONArray() : a);
             } else {
-                l.put("title", "Arhiva");
+                l.put("title", "Life Archive");
                 o.put("mode", "svi");
                 JSONArray s = d.optJSONArray("svi");
                 if (s != null) o.put("rokovi", s);
@@ -210,7 +210,7 @@ public class ArhivaVidzet extends AppWidgetProvider {
             int n = dana(o.optString("d"));
             if (n <= o.optInt("w", 7)) { broj++; if (n < 0) proslo = true; }
         }
-        v.setTextViewText(R.id.vz_ime, txt(d, "title", "Arhiva"));
+        v.setTextViewText(R.id.vz_ime, txt(d, "title", "Life Archive"));
         if (broj > 0) {
             v.setViewVisibility(R.id.vz_broj, View.VISIBLE);
             v.setTextViewText(R.id.vz_broj, broj > 99 ? "99+" : String.valueOf(broj));
@@ -225,7 +225,7 @@ public class ArhivaVidzet extends AppWidgetProvider {
 
     private static RemoteViews srednji(Context c, JSONObject d, boolean veliki, int id) {
         RemoteViews v = new RemoteViews(c.getPackageName(), veliki ? R.layout.vidzet_veliki : R.layout.vidzet_srednji);
-        v.setTextViewText(R.id.vz_naslov, txt(d, "title", "Arhiva"));
+        v.setTextViewText(R.id.vz_naslov, txt(d, "title", "Life Archive"));
         v.setOnClickPendingIntent(R.id.vz_koren, prozor(c, id));
         JSONArray r = rokovi(d);
         int prikazano = 0;
@@ -244,7 +244,7 @@ public class ArhivaVidzet extends AppWidgetProvider {
         }
         for (int k = prikazano; k < REDOVI.length; k++) v.setViewVisibility(REDOVI[k][0], View.GONE);
         v.setViewVisibility(R.id.vz_prazno, prikazano == 0 ? View.VISIBLE : View.GONE);
-        v.setTextViewText(R.id.vz_prazno, txt(d, prikazano == 0 && !d.has("rokovi") ? "open" : "none", prikazano == 0 && !d.has("rokovi") ? "Otvori Arhivu" : "Nema podsetnika."));
+        v.setTextViewText(R.id.vz_prazno, txt(d, prikazano == 0 && !d.has("rokovi") ? "open" : "none", prikazano == 0 && !d.has("rokovi") ? "Otvori Life Archive" : "Nema podsetnika."));
         boolean bez = bezPodsetnika(d);
         v.setViewVisibility(R.id.vz_rok_blok, bez ? View.GONE : View.VISIBLE);
         if (veliki) {
@@ -272,7 +272,7 @@ public class ArhivaVidzet extends AppWidgetProvider {
             }
             v.setViewVisibility(R.id.vz_dok_red, n > 0 ? View.VISIBLE : View.GONE);
             v.setViewVisibility(R.id.vz_dok_prazno, n > 0 ? View.GONE : View.VISIBLE);
-            v.setTextViewText(R.id.vz_dok_prazno, txt(d, "noDocs", "Dokument dodaješ u Arhivi: Prečica → Na vidžetu."));
+            v.setTextViewText(R.id.vz_dok_prazno, txt(d, "noDocs", "Dokument dodaješ u Life Archive: Prečica → Na vidžetu."));
         }
         return v;
     }

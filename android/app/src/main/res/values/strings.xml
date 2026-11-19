@@ -1,8 +1,8 @@
 <?xml version='1.0' encoding='utf-8'?>
 <resources>
-    <string name="app_name">Arhiva probna</string>
-    <string name="title_activity_main">Arhiva probna</string>
+    <string name="app_name">Life Archive</string>
+    <string name="title_activity_main">Life Archive</string>
     <string name="package_name">com.arhiva.probna</string>
     <string name="custom_url_scheme">com.arhiva.probna</string>
-    <string name="vidzet_opis">Podsetnici i izabrani dokumenti Arhive</string>
+    <string name="vidzet_opis">Podsetnici i izabrani dokumenti · Life Archive</string>
 </resources>
