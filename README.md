@@ -7,3 +7,5 @@ Nov APK treba samo kad se menja Android deo (dodaci, dozvole, ikonica).
 Most ka telefonu (`cap/capacitor.js`, `cap/arhiva-native.js`) je u web Arhivi i učitava se samo u ovoj aplikaciji.
 
 Najnoviji APK: https://github.com/arhiva-app/arhiva-android/releases/latest/download/Arhiva-probna.apk
+
+v339: dodat zvanični dodatak `@capacitor/network` (tip mreže za „Drive samo preko Wi-Fi“; dozvola ACCESS_NETWORK_STATE, bez pitanja korisnika).
