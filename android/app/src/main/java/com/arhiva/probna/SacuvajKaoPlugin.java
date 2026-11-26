@@ -22,6 +22,7 @@ import java.io.OutputStream;
 import java.util.ArrayList;
 import java.util.Collections;
 import java.util.List;
+import java.util.regex.Matcher;
 import java.util.regex.Pattern;
 
 /* „Sačuvaj kao“: Android sam pita gde i pod kojim imenom (ACTION_CREATE_DOCUMENT, Storage Access Framework).
@@ -32,7 +33,7 @@ import java.util.regex.Pattern;
    - izaberiFasciklu(): {uri, ime} ili {otkazano}
    - proveriFasciklu({uri}): {ok} (pravo upisa i dalje važi); stari APK nema ovu metodu → Arhiva ne nudi fasciklu
    - uFasciklu({putanja, uri, ime, mime, zadrzi}): fajl iz keša u fasciklu (isto ime = prepiše se), pa se brišu starije
-     Arhivine kopije (arhiva-backup-GGGG-MM-DD.zip/json) preko `zadrzi`; {ime: ime fascikle}; reject „PRAVO“ = nema prava/fascikle
+     Arhivine kopije (life-archive-backup-GGGG-MM-DD.zip/json, staro arhiva-backup-…) preko `zadrzi`; {ime: ime fascikle}; reject „PRAVO“ = nema prava/fascikle
    - otpustiFasciklu({uri}): pravo se vraća Androidu */
 @CapacitorPlugin(name = "SacuvajKao")
 public class SacuvajKaoPlugin extends Plugin {
@@ -97,7 +98,8 @@ public class SacuvajKaoPlugin extends Plugin {
     }
 
     /* ---------- v293: fascikla za rezervnu kopiju ---------- */
-    private static final Pattern KOPIJA = Pattern.compile("^arhiva-backup-\\d{4}-\\d{2}-\\d{2}\\.(json|zip)$");
+    private static final Pattern KOPIJA = Pattern.compile("^(?:life-archive|arhiva)-backup-(\\d{4}-\\d{2}-\\d{2})\\.(json|zip)$");   /* v354: novo ime life-archive-backup-…, staro se i dalje prepoznaje */
+    private static String datum(String ime) { Matcher m = KOPIJA.matcher(ime); return m.matches() ? m.group(1) : ""; }
     private static final int PRAVA = Intent.FLAG_GRANT_READ_URI_PERMISSION | Intent.FLAG_GRANT_WRITE_URI_PERMISSION;
 
     @PluginMethod
@@ -181,7 +183,7 @@ public class SacuvajKaoPlugin extends Plugin {
                 try {
                     List<String[]> kop = new ArrayList<>();
                     for (String[] d : deca(tree, koren)) if (d[1] != null && KOPIJA.matcher(d[1]).matches()) kop.add(d);
-                    Collections.sort(kop, (a, c) -> c[1].compareTo(a[1]));
+                    Collections.sort(kop, (a, c) -> { int r = datum(c[1]).compareTo(datum(a[1])); return r != 0 ? r : c[1].compareTo(a[1]); });   /* v354: po datumu, ne po slovima */
                     for (int i = zadrzi; i < kop.size(); i++)
                         DocumentsContract.deleteDocument(cr, DocumentsContract.buildDocumentUriUsingTree(tree, kop.get(i)[0]));
                 } catch (Exception e) { /* brisanje starih nije obavezno */ }
